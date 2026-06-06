@@ -10,6 +10,7 @@ import { PROJECT_STAGES, STATUS_COLORS, ProjectStatus } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AssignmentForm from "./assignment-form";
+import TaskRequestActions from "./task-request-actions";
 
 export default async function AssignmentsPage() {
   const supabase = await createClient();
@@ -19,15 +20,17 @@ export default async function AssignmentsPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/dashboard");
 
-  const [projectsRes, staffRes, assignmentsRes] = await Promise.all([
+  const [projectsRes, staffRes, assignmentsRes, requestsRes] = await Promise.all([
     supabase.from("projects").select("id, bank_name, status").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, role").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("*, profiles(full_name)").order("assigned_at", { ascending: false }),
+    supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
   ]);
 
   const projects = projectsRes.data || [];
   const staff = staffRes.data || [];
   const assignments = assignmentsRes.data || [];
+  const pendingRequests = requestsRes.data || [];
 
   return (
     <div className="max-w-3xl">
@@ -56,6 +59,31 @@ export default async function AssignmentsPage() {
           </div>
         )}
       </div>
+
+      {pendingRequests.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold text-slate-600 mb-3">
+            Pending Task Requests ({pendingRequests.length})
+          </h2>
+          <div className="space-y-2">
+            {pendingRequests.map((r: any) => (
+              <Card key={r.id} className="border-amber-200 bg-amber-50">
+                <CardContent className="py-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{r.profiles?.full_name}</p>
+                      {r.projects && <p className="text-xs text-slate-500">{r.projects.bank_name}</p>}
+                      {r.stage && <Badge className={`text-xs mt-1 ${STATUS_COLORS[r.stage as ProjectStatus]}`}>{r.stage}</Badge>}
+                      <p className="text-xs text-slate-600 mt-1">{r.message}</p>
+                    </div>
+                    <TaskRequestActions requestId={r.id} adminId={user.id} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,3 +19,17 @@ export async function createAssignment(input: {
   if (error) return { error: error.message };
   return {};
 }
+
+export async function reviewTaskRequest(input: {
+  requestId: string;
+  adminId: string;
+  status: "approved" | "rejected";
+}): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("task_requests")
+    .update({ status: input.status, reviewed_by: input.adminId, reviewed_at: new Date().toISOString() })
+    .eq("id", input.requestId);
+  if (error) return { error: error.message };
+  return {};
+}
