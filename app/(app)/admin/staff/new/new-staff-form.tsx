@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
-  password: z.string().min(4, "Minimum 4 characters"),
+  password: z.string().min(6, "Minimum 6 characters (Supabase requirement)"),
   full_name: z.string().min(1, "Name required"),
   role: z.enum(["admin", "surveyor", "draughtsman", "report_staff"]),
   designation: z.string().optional(),
@@ -172,7 +172,11 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
               </FormItem>
             )} />
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && (
+              <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">
+                <p className="text-sm text-red-600 font-medium">Error: {error}</p>
+              </div>
+            )}
             <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Creating…" : "Create Staff Member"}
             </Button>
