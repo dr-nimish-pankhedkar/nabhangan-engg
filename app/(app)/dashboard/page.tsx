@@ -5,11 +5,11 @@
  */
 
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
+import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS, ROLE_LABELS, UserRole } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -26,16 +26,37 @@ export default async function DashboardPage() {
   if (!profile) redirect("/login");
 
   if (profile.role === "admin") {
-    const { data: projects } = await supabase
-      .from("projects")
-      .select("status");
+    const [projectsRes, staffRes, assignmentsRes] = await Promise.all([
+      supabase.from("projects").select("status"),
+      supabase.from("profiles").select("id, full_name, role, designation, is_active").eq("is_active", true).order("full_name"),
+      supabase
+        .from("project_assignments")
+        .select("user_id, stage, projects(bank_name, status)")
+        .neq("stage", "lead")
+        .neq("stage", "review"),
+    ]);
+
+    const projects = projectsRes.data || [];
+    const staff = staffRes.data || [];
+    const allAssignments = assignmentsRes.data || [];
 
     const counts = PROJECT_STAGES.reduce((acc, s) => {
-      acc[s.value] = (projects || []).filter((p) => p.status === s.value).length;
+      acc[s.value] = projects.filter((p) => p.status === s.value).length;
       return acc;
     }, {} as Record<ProjectStatus, number>);
 
-    const total = (projects || []).length;
+    const total = projects.length;
+
+    // Active occupancy: assignments whose project is currently in that exact stage (i.e. an open task)
+    const activeAssignmentsByUser = allAssignments.reduce((acc: Record<string, any[]>, a: any) => {
+      if (a.projects?.status === a.stage) {
+        acc[a.user_id] = acc[a.user_id] || [];
+        acc[a.user_id].push(a);
+      }
+      return acc;
+    }, {});
+
+    const maxLoad = Math.max(1, ...staff.map((s) => (activeAssignmentsByUser[s.id] || []).length));
 
     return (
       <div>
@@ -53,7 +74,7 @@ export default async function DashboardPage() {
             </Card>
           ))}
         </div>
-        <Card className="border-slate-200">
+        <Card className="border-slate-200 mb-8">
           <CardHeader>
             <CardTitle className="text-sm text-slate-600">Stage Distribution</CardTitle>
           </CardHeader>
@@ -75,6 +96,79 @@ export default async function DashboardPage() {
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Staff Occupancy */}
+        <Card className="border-slate-200">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle className="text-sm text-slate-600">Staff Occupancy</CardTitle>
+            <Link href="/admin/staff" className="text-xs text-[#1e3a5f] hover:underline flex items-center gap-0.5">
+              Manage staff <ChevronRight className="h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {staff.length === 0 ? (
+              <p className="text-sm text-slate-500">No active staff members.</p>
+            ) : (
+              <div className="space-y-4">
+                {staff.map((s: any) => {
+                  const active = activeAssignmentsByUser[s.id] || [];
+                  const load = active.length;
+                  const pct = Math.round((load / maxLoad) * 100);
+                  const barColor =
+                    load === 0 ? "bg-slate-200" :
+                    load <= 1 ? "bg-green-500" :
+                    load <= 2 ? "bg-amber-500" :
+                    "bg-red-500";
+                  const loadLabel =
+                    load === 0 ? "Free" :
+                    load <= 1 ? "Light" :
+                    load <= 2 ? "Moderate" :
+                    "Heavy";
+                  const loadBadgeColor =
+                    load === 0 ? "bg-slate-100 text-slate-500" :
+                    load <= 1 ? "bg-green-100 text-green-700" :
+                    load <= 2 ? "bg-amber-100 text-amber-700" :
+                    "bg-red-100 text-red-700";
+
+                  return (
+                    <div key={s.id}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                            {s.full_name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-800 leading-tight">{s.full_name}</p>
+                            <p className="text-xs text-slate-400 leading-tight">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={loadBadgeColor}>{loadLabel}</Badge>
+                          <span className="text-xs text-slate-400 w-16 text-right">{load} active task{load === 1 ? "" : "s"}</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-slate-100 rounded-full h-2 ml-9">
+                        <div
+                          className={`h-2 rounded-full transition-all ${barColor}`}
+                          style={{ width: `${Math.max(pct, load > 0 ? 8 : 0)}%` }}
+                        />
+                      </div>
+                      {active.length > 0 && (
+                        <div className="ml-9 mt-1.5 flex flex-wrap gap-1.5">
+                          {active.map((a: any, i: number) => (
+                            <Badge key={i} variant="outline" className="text-xs font-normal text-slate-500">
+                              {a.projects?.bank_name} · {a.stage}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -21,10 +21,16 @@ export default async function NewProjectPage() {
 
   if (profile?.role !== "admin") redirect("/projects");
 
+  const { data: staff } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, designation")
+    .eq("is_active", true)
+    .order("full_name");
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold text-slate-800 mb-6">New Project</h1>
-      <NewProjectForm userId={user.id} />
+      <NewProjectForm userId={user.id} staff={staff || []} />
     </div>
   );
 }
