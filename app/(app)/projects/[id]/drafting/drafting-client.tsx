@@ -1,0 +1,120 @@
+/**
+ * Nabhangan Engineers — Project & Workflow Tracker
+ * Copyright © 2026 Dr. Nimish Pankhedkar, Chemiligence Solutions
+ * All rights reserved.
+ */
+
+"use client";
+
+import { useState, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { uploadProjectFile } from "@/lib/storage";
+import { logFileRecord, logTime, advanceStage } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+const timeSchema = z.object({
+  hours_spent: z.string().min(1).refine((v) => parseFloat(v) > 0, "Must be > 0"),
+  notes: z.string().optional(),
+});
+
+export default function DraftingClient({ projectId, userId }: { projectId: string; userId: string }) {
+  const router = useRouter();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [timeLogged, setTimeLogged] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm({ resolver: zodResolver(timeSchema), defaultValues: { hours_spent: "", notes: "" } });
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadProgress(10);
+    try {
+      setUploadProgress(40);
+      const url = await uploadProjectFile(projectId, "drafting", file);
+      setUploadProgress(80);
+      await logFileRecord({ projectId, userId, stage: "drafting", filePath: url, fileName: file.name, fileType: file.type });
+      setUploadProgress(100);
+      setUploadedFile(file.name);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onTimeSubmit(data: any) {
+    const result = await logTime({ projectId, userId, stage: "drafting", hours_spent: parseFloat(data.hours_spent), notes: data.notes || null });
+    if (result.error) setError(result.error);
+    else setTimeLogged(true);
+  }
+
+  async function handleAdvance() {
+    const result = await advanceStage(projectId, "report");
+    if (result.error) setError(result.error);
+    else router.push(`/projects/${projectId}`);
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-slate-200">
+        <CardHeader className="pb-3"><CardTitle className="text-sm">Upload Drafting File</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <input ref={fileRef} type="file" className="hidden" onChange={handleFileUpload} />
+          <Button variant="outline" className="gap-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            <Upload className="h-4 w-4" />{uploading ? "Uploading…" : "Choose File"}
+          </Button>
+          {uploading && <Progress value={uploadProgress} className="h-2" />}
+          {uploadedFile && <div className="flex items-center gap-2 text-sm text-green-600"><CheckCircle className="h-4 w-4" />{uploadedFile} uploaded</div>}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200">
+        <CardHeader className="pb-3"><CardTitle className="text-sm">Log Time</CardTitle></CardHeader>
+        <CardContent>
+          {timeLogged ? (
+            <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle className="h-4 w-4" />Time logged</div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onTimeSubmit)} className="space-y-4">
+                <FormField control={form.control} name="hours_spent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hours Spent</FormLabel>
+                    <FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="notes" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
+              </form>
+            </Form>
+          )}
+        </CardContent>
+      </Card>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      <Button onClick={handleAdvance} className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+        Mark Drafting Complete → Report
+      </Button>
+    </div>
+  );
+}
