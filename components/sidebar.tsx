@@ -87,10 +87,10 @@ export default function Sidebar({ profile }: { profile: Profile }) {
         </div>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-2 text-xs text-blue-200 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-blue-100 hover:bg-red-500/20 hover:text-white transition-colors"
         >
-          <LogOut className="h-3.5 w-3.5" />
-          Sign out
+          <LogOut className="h-4 w-4" />
+          Sign Out
         </button>
       </div>
     </aside>
