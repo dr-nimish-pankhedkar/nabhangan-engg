@@ -23,7 +23,7 @@ interface NavItem {
 const adminNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/hr", label: "HR", icon: Users },
+  { href: "/admin/staff", label: "Staff", icon: Users },
   { href: "/admin/checklists", label: "Checklists", icon: ClipboardList },
   { href: "/admin/assignments", label: "Assignments", icon: UserCheck },
 ];
@@ -31,6 +31,7 @@ const adminNav: NavItem[] = [
 const staffNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
+  { href: "/my-tasks", label: "My Tasks", icon: ClipboardList },
 ];
 
 export default function Sidebar({ profile }: { profile: Profile }) {

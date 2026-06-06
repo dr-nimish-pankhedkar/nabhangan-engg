@@ -15,6 +15,12 @@ export interface Profile {
   salary: number | null;
   is_active: boolean;
   created_at: string;
+  dob?: string | null;
+  doj?: string | null;
+  designation?: string | null;
+  address?: string | null;
+  emergency_contact?: string | null;
+  employee_id?: string | null;
 }
 
 export interface Project {
@@ -115,4 +121,54 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
   drafting: "bg-amber-100 text-amber-700",
   report: "bg-purple-100 text-purple-700",
   review: "bg-green-100 text-green-700",
+};
+
+export interface StaffDocument {
+  id: string;
+  user_id: string;
+  doc_type: string;
+  file_path: string;
+  file_name: string;
+  file_size: number | null;
+  uploaded_at: string;
+  uploaded_by: string | null;
+}
+
+export interface Attendance {
+  id: string;
+  user_id: string;
+  date: string;
+  status: "present" | "absent" | "half_day" | "leave";
+  notes: string | null;
+  marked_by: string | null;
+}
+
+export interface TaskRequest {
+  id: string;
+  user_id: string;
+  project_id: string | null;
+  stage: ProjectStatus | null;
+  message: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  profiles?: Profile;
+  projects?: Project;
+}
+
+export const DOC_TYPES = [
+  { value: "id_proof", label: "ID Proof (Aadhar/PAN)" },
+  { value: "address_proof", label: "Address Proof" },
+  { value: "qualification", label: "Qualification Certificate" },
+  { value: "experience", label: "Experience Letter" },
+  { value: "photo", label: "Photograph" },
+  { value: "other", label: "Other" },
+];
+
+export const ATTENDANCE_STATUS_COLORS: Record<string, string> = {
+  present: "bg-green-100 text-green-700",
+  absent: "bg-red-100 text-red-700",
+  half_day: "bg-amber-100 text-amber-700",
+  leave: "bg-blue-100 text-blue-700",
 };
