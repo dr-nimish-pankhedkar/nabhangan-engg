@@ -53,28 +53,28 @@ export default async function StaffProfilePage({ params }: { params: Promise<{ i
       {/* Header */}
       <Card className="border-slate-200 mb-6">
         <CardContent className="pt-5 pb-5">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xl font-bold">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xl font-bold shrink-0">
                 {staff.full_name.slice(0, 2).toUpperCase()}
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-800">{staff.full_name}</h2>
-                <p className="text-slate-500">{staff.designation || ROLE_LABELS[staff.role as UserRole]}</p>
+              <div className="min-w-0">
+                <h2 className="text-xl font-semibold text-slate-800 truncate">{staff.full_name}</h2>
+                <p className="text-slate-500 truncate">{staff.designation || ROLE_LABELS[staff.role as UserRole]}</p>
                 {staff.employee_id && <p className="text-xs text-slate-400 mt-0.5">ID: {staff.employee_id}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <ToggleActiveButton userId={staff.id} isActive={staff.is_active} />
-              <Link href={`/admin/staff/${staff.id}/edit`}>
-                <Button variant="outline" size="sm" className="gap-1">
+              <Link href={`/admin/staff/${staff.id}/edit`} className="flex-1 sm:flex-none">
+                <Button variant="outline" size="sm" className="gap-1 w-full sm:w-auto">
                   <Pencil className="h-3.5 w-3.5" /> Edit
                 </Button>
               </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 pt-4 border-t border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-5 pt-4 border-t border-slate-100">
             <div><p className="text-xs text-slate-400">Role</p><p className="text-sm font-medium text-slate-700">{ROLE_LABELS[staff.role as UserRole]}</p></div>
             <div><p className="text-xs text-slate-400">Phone</p><p className="text-sm font-medium text-slate-700">{staff.phone || "—"}</p></div>
             <div><p className="text-xs text-slate-400">Date of Birth</p><p className="text-sm font-medium text-slate-700">{staff.dob ? new Date(staff.dob).toLocaleDateString("en-IN") : "—"}</p></div>
@@ -88,13 +88,13 @@ export default async function StaffProfilePage({ params }: { params: Promise<{ i
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="border-slate-200"><CardContent className="pt-4"><p className="text-2xl font-bold text-[#1e3a5f]">{totalHours.toFixed(1)}h</p><p className="text-xs text-slate-400">Total Hours Logged</p></CardContent></Card>
         <Card className="border-slate-200"><CardContent className="pt-4"><p className="text-2xl font-bold text-[#1e3a5f]">{assignments.length}</p><p className="text-xs text-slate-400">Project Assignments</p></CardContent></Card>
         <Card className="border-slate-200"><CardContent className="pt-4"><p className="text-2xl font-bold text-[#1e3a5f]">{presentDays}</p><p className="text-xs text-slate-400">Days Present (last 30)</p></CardContent></Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 [&>*]:min-w-0">
         {/* Documents */}
         <Card className="border-slate-200">
           <CardHeader className="pb-2 flex-row items-center justify-between">

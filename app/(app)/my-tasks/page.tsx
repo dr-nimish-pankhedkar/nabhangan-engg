@@ -48,12 +48,12 @@ export default async function MyTasksPage() {
               return (
                 <Card key={a.id} className="border-slate-200">
                   <CardContent className="py-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-slate-800">{a.projects?.bank_name}</p>
-                        <p className="text-xs text-slate-400">{a.projects?.project_address}</p>
+                    <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-800 truncate">{a.projects?.bank_name}</p>
+                        <p className="text-xs text-slate-400 truncate">{a.projects?.project_address}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Badge className={STATUS_COLORS[stage]}>{stage}</Badge>
                         {route && (
                           <Link href={`/projects/${a.projects?.id}/${route}`}>
@@ -86,9 +86,9 @@ export default async function MyTasksPage() {
             {requests.map((r: any) => (
               <Card key={r.id} className="border-slate-200">
                 <CardContent className="py-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      {r.projects && <p className="text-sm font-medium text-slate-700">{r.projects.bank_name}</p>}
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      {r.projects && <p className="text-sm font-medium text-slate-700 truncate">{r.projects.bank_name}</p>}
                       {r.stage && <Badge className={`${STATUS_COLORS[r.stage as ProjectStatus]} mr-2`}>{r.stage}</Badge>}
                       <p className="text-xs text-slate-500 mt-1">{r.message}</p>
                     </div>

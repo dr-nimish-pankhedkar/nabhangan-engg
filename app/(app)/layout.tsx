@@ -22,10 +22,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile) redirect("/login");
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex flex-col md:flex-row md:h-screen bg-white">
       <Sidebar profile={profile} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 flex flex-col md:overflow-hidden">
+        <main className="flex-1 md:overflow-y-auto p-4 md:p-6">
           {children}
         </main>
         <footer className="border-t border-slate-200 px-6 py-3 text-center text-xs text-slate-400">

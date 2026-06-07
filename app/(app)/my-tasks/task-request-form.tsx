@@ -62,7 +62,7 @@ export default function TaskRequestForm({
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="project_id" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project (optional)</FormLabel>
@@ -96,7 +96,7 @@ export default function TaskRequestForm({
                 </FormItem>
               )} />
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Submitting…" : "Submit Request"}
               </Button>
             </form>

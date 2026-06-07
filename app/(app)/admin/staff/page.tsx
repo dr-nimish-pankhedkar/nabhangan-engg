@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default async function AdminStaffPage() {
   const supabase = await createClient();
@@ -47,10 +48,10 @@ export default async function AdminStaffPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <h1 className="text-xl font-semibold text-slate-800">Staff Management</h1>
-        <Link href="/admin/staff/new">
-          <Button className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white gap-2">
+        <Link href="/admin/staff/new" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white gap-2">
             <Plus className="h-4 w-4" /> Add Staff
           </Button>
         </Link>
@@ -61,17 +62,17 @@ export default async function AdminStaffPage() {
           <Link key={s.id} href={`/admin/staff/${s.id}`}>
             <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="pt-4 pb-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-sm font-semibold">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-sm font-semibold shrink-0">
                       {s.full_name.slice(0, 2).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-800">{s.full_name}</p>
-                      <p className="text-xs text-slate-500">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-800 truncate">{s.full_name}</p>
+                      <p className="text-xs text-slate-500 truncate">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
                     </div>
                   </div>
-                  <Badge className={s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}>
+                  <Badge className={cn(s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500", "shrink-0")}>
                     {s.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>

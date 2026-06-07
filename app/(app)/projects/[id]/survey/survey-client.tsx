@@ -93,7 +93,7 @@ export default function SurveyStageClient({
           <input ref={fileRef} type="file" className="hidden" onChange={handleFileUpload} />
           <Button
             variant="outline"
-            className="gap-2"
+            className="w-full sm:w-auto gap-2"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
           >
@@ -162,7 +162,7 @@ export default function SurveyStageClient({
                   <Label htmlFor="remarks">Remarks</Label>
                   <Input id="remarks" {...register("_remarks")} />
                 </div>
-                <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+                <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
                   Submit Checklist
                 </Button>
               </form>

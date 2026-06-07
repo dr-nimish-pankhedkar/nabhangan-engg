@@ -37,7 +37,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     <div className="max-w-3xl">
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Review Stage</h1>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="border-slate-200"><CardContent className="pt-4"><p className="text-2xl font-bold text-[#1e3a5f]">{files.length}</p><p className="text-xs text-slate-400">Files uploaded</p></CardContent></Card>
         <Card className="border-slate-200"><CardContent className="pt-4"><p className="text-2xl font-bold text-[#1e3a5f]">{responses.length}</p><p className="text-xs text-slate-400">Checklists submitted</p></CardContent></Card>
         <Card className="border-slate-200"><CardContent className="pt-4"><p className="text-2xl font-bold text-[#1e3a5f]">{totalHours.toFixed(1)}h</p><p className="text-xs text-slate-400">Total hours</p></CardContent></Card>
@@ -81,7 +81,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
       </div>
 
       <form action={markComplete.bind(null, id)}>
-        <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
+        <Button type="submit" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
           Mark Project Complete
         </Button>
       </form>

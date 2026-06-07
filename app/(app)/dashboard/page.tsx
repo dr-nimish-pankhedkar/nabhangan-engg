@@ -68,7 +68,7 @@ export default async function DashboardPage() {
                 <CardTitle className="text-sm text-slate-500 font-medium">{stage.label}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-[#1e3a5f]">{counts[stage.value]}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#1e3a5f]">{counts[stage.value]}</p>
                 <p className="text-xs text-slate-400 mt-1">projects</p>
               </CardContent>
             </Card>
@@ -134,29 +134,29 @@ export default async function DashboardPage() {
 
                   return (
                     <div key={s.id}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-start sm:items-center justify-between flex-wrap gap-y-1.5 mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
                           <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-semibold shrink-0">
                             {s.full_name.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-800 leading-tight">{s.full_name}</p>
-                            <p className="text-xs text-slate-400 leading-tight">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-800 leading-tight truncate">{s.full_name}</p>
+                            <p className="text-xs text-slate-400 leading-tight truncate">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Badge className={loadBadgeColor}>{loadLabel}</Badge>
-                          <span className="text-xs text-slate-400 w-16 text-right">{load} active task{load === 1 ? "" : "s"}</span>
+                          <span className="text-xs text-slate-400 w-auto sm:w-16 text-right whitespace-nowrap">{load} active task{load === 1 ? "" : "s"}</span>
                         </div>
                       </div>
-                      <div className="flex-1 bg-slate-100 rounded-full h-2 ml-9">
+                      <div className="flex-1 bg-slate-100 rounded-full h-2 sm:ml-9">
                         <div
                           className={`h-2 rounded-full transition-all ${barColor}`}
                           style={{ width: `${Math.max(pct, load > 0 ? 8 : 0)}%` }}
                         />
                       </div>
                       {active.length > 0 && (
-                        <div className="ml-9 mt-1.5 flex flex-wrap gap-1.5">
+                        <div className="sm:ml-9 mt-1.5 flex flex-wrap gap-1.5">
                           {active.map((a: any, i: number) => (
                             <Badge key={i} variant="outline" className="text-xs font-normal text-slate-500">
                               {a.projects?.bank_name} · {a.stage}
@@ -199,25 +199,25 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Card className="border-slate-200">
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-[#1e3a5f]">{assignments.length}</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#1e3a5f]">{assignments.length}</p>
             <p className="text-xs text-slate-400 mt-1">Assignments</p>
           </CardContent>
         </Card>
         <Card className="border-slate-200">
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-[#1e3a5f]">{totalHours.toFixed(1)}h</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#1e3a5f]">{totalHours.toFixed(1)}h</p>
             <p className="text-xs text-slate-400 mt-1">Hours Logged</p>
           </CardContent>
         </Card>
         <Card className="border-slate-200">
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-[#1e3a5f]">{presentDays}</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#1e3a5f]">{presentDays}</p>
             <p className="text-xs text-slate-400 mt-1">Days Present (this month)</p>
           </CardContent>
         </Card>
         <Card className="border-slate-200">
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-[#1e3a5f]">{pendingRequests}</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#1e3a5f]">{pendingRequests}</p>
             <p className="text-xs text-slate-400 mt-1">Pending Requests</p>
           </CardContent>
         </Card>
@@ -242,10 +242,10 @@ export default async function DashboardPage() {
                 <Link key={a.id} href={route ? `/projects/${a.projects?.id}/${route}` : `/projects/${a.projects?.id}`}>
                   <Card className="border-slate-200 hover:shadow-sm transition-shadow cursor-pointer">
                     <CardContent className="py-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-slate-800">{a.projects?.bank_name}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{a.projects?.project_address}</p>
+                      <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-800 truncate">{a.projects?.bank_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 truncate">{a.projects?.project_address}</p>
                         </div>
                         <Badge className={STATUS_COLORS[a.stage as ProjectStatus]}>
                           {a.stage.charAt(0).toUpperCase() + a.stage.slice(1)}

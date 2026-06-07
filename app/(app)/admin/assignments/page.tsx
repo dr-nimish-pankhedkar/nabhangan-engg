@@ -48,11 +48,11 @@ export default async function AssignmentsPage() {
         ) : (
           <div className="space-y-2">
             {assignments.map((a: any) => (
-              <div key={a.id} className="flex items-center justify-between bg-slate-50 rounded-md px-4 py-3 text-sm">
-                <span className="text-slate-800 font-medium">{a.profiles?.full_name}</span>
-                <div className="flex items-center gap-2">
+              <div key={a.id} className="flex items-center justify-between gap-2 flex-wrap bg-slate-50 rounded-md px-4 py-3 text-sm">
+                <span className="text-slate-800 font-medium truncate min-w-0">{a.profiles?.full_name}</span>
+                <div className="flex items-center gap-2 shrink-0">
                   <Badge className={STATUS_COLORS[a.stage as ProjectStatus]}>{a.stage}</Badge>
-                  <span className="text-slate-400 text-xs">project: {a.project_id.slice(0, 8)}…</span>
+                  <span className="text-slate-400 text-xs whitespace-nowrap">project: {a.project_id.slice(0, 8)}…</span>
                 </div>
               </div>
             ))}
@@ -69,9 +69,9 @@ export default async function AssignmentsPage() {
             {pendingRequests.map((r: any) => (
               <Card key={r.id} className="border-amber-200 bg-amber-50">
                 <CardContent className="py-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{r.profiles?.full_name}</p>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">{r.profiles?.full_name}</p>
                       {r.projects && <p className="text-xs text-slate-500">{r.projects.bank_name}</p>}
                       {r.stage && <Badge className={`text-xs mt-1 ${STATUS_COLORS[r.stage as ProjectStatus]}`}>{r.stage}</Badge>}
                       <p className="text-xs text-slate-600 mt-1">{r.message}</p>

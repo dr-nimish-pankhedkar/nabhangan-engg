@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default async function ProjectsPage({
   searchParams,
@@ -62,11 +63,11 @@ export default async function ProjectsPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <h1 className="text-xl font-semibold text-slate-800">Projects</h1>
         {isAdmin && (
-          <Link href="/projects/new">
-            <Button className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white gap-2">
+          <Link href="/projects/new" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white gap-2">
               <Plus className="h-4 w-4" />
               New Project
             </Button>
@@ -100,15 +101,15 @@ export default async function ProjectsPage({
             <Link key={p.id} href={`/projects/${p.id}`}>
               <Card className="border-slate-200 hover:shadow-sm transition-shadow cursor-pointer">
                 <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-slate-800">{p.bank_name}</p>
-                      <p className="text-sm text-slate-500 mt-0.5">{p.project_address}</p>
+                  <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-800 truncate">{p.bank_name}</p>
+                      <p className="text-sm text-slate-500 mt-0.5 truncate">{p.project_address}</p>
                       {isAdmin && (
-                        <p className="text-xs text-slate-400 mt-1">Created by: {p.profiles?.full_name}</p>
+                        <p className="text-xs text-slate-400 mt-1 truncate">Created by: {p.profiles?.full_name}</p>
                       )}
                     </div>
-                    <Badge className={STATUS_COLORS[p.status as ProjectStatus]}>
+                    <Badge className={cn(STATUS_COLORS[p.status as ProjectStatus], "shrink-0")}>
                       {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
                     </Badge>
                   </div>

@@ -123,7 +123,7 @@ export default function NewProjectForm({
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="latitude"
@@ -248,7 +248,7 @@ export default function NewProjectForm({
             )}
             <Button
               type="submit"
-              className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+              className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting ? "Creating…" : "Create Project"}

@@ -11,6 +11,7 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Circle, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -54,11 +55,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-700">Projects</Link>
-        <ChevronRight className="h-4 w-4 text-slate-400" />
-        <h1 className="text-xl font-semibold text-slate-800">{project.bank_name}</h1>
-        <Badge className={STATUS_COLORS[project.status as ProjectStatus]}>
+      <div className="flex items-center gap-3 mb-6 min-w-0 flex-wrap">
+        <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-700 shrink-0">Projects</Link>
+        <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+        <h1 className="text-xl font-semibold text-slate-800 truncate min-w-0">{project.bank_name}</h1>
+        <Badge className={cn(STATUS_COLORS[project.status as ProjectStatus], "shrink-0")}>
           {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
         </Badge>
       </div>
@@ -81,36 +82,36 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           const href = route ? `/projects/${id}/${route}` : null;
 
           return (
-            <div key={stage.value} className="flex items-center flex-1 last:flex-none">
-              <div className="flex flex-col items-center">
+            <div key={stage.value} className="flex items-center flex-1 last:flex-none min-w-0">
+              <div className="flex flex-col items-center min-w-0">
                 {href ? (
                   <Link href={href}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
                       done ? "bg-[#1e3a5f] border-[#1e3a5f]" :
                       active ? "border-[#1e3a5f] bg-white" :
                       "border-slate-300 bg-white"
                     }`}>
                       {done ? (
-                        <CheckCircle className="h-4 w-4 text-white" />
+                        <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                       ) : (
-                        <Circle className={`h-4 w-4 ${active ? "text-[#1e3a5f]" : "text-slate-300"}`} />
+                        <Circle className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${active ? "text-[#1e3a5f]" : "text-slate-300"}`} />
                       )}
                     </div>
                   </Link>
                 ) : (
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 ${
                     done ? "bg-[#1e3a5f] border-[#1e3a5f]" :
                     active ? "border-[#1e3a5f] bg-white" :
                     "border-slate-300 bg-white"
                   }`}>
                     {done ? (
-                      <CheckCircle className="h-4 w-4 text-white" />
+                      <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                     ) : (
-                      <Circle className={`h-4 w-4 ${active ? "text-[#1e3a5f]" : "text-slate-300"}`} />
+                      <Circle className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${active ? "text-[#1e3a5f]" : "text-slate-300"}`} />
                     )}
                   </div>
                 )}
-                <span className={`text-xs mt-1 ${active ? "text-[#1e3a5f] font-medium" : "text-slate-400"}`}>
+                <span className={`text-[10px] sm:text-xs mt-1 text-center truncate max-w-[60px] sm:max-w-none ${active ? "text-[#1e3a5f] font-medium" : "text-slate-400"}`}>
                   {stage.label}
                 </span>
               </div>

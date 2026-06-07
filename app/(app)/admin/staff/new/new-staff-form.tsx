@@ -63,7 +63,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="full_name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name *</FormLabel>
@@ -80,7 +80,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
               )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email (Login) *</FormLabel>
@@ -97,7 +97,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
               )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="role" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role *</FormLabel>
@@ -122,7 +122,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
               )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="phone" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
@@ -139,7 +139,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
               )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="dob" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
@@ -177,7 +177,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
                 <p className="text-sm text-red-600 font-medium">Error: {error}</p>
               </div>
             )}
-            <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Creating…" : "Create Staff Member"}
             </Button>
           </form>

@@ -71,7 +71,7 @@ export default function ChecklistForm({ userId }: { userId: string }) {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Template Name</FormLabel>
@@ -113,7 +113,7 @@ export default function ChecklistForm({ userId }: { userId: string }) {
               <div className="space-y-3">
                 {fields.map((field, idx) => (
                   <div key={field.id} className="border border-slate-200 rounded-md p-3 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <FormField control={form.control} name={`fields.${idx}.label`} render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs">Label</FormLabel>
@@ -170,7 +170,7 @@ export default function ChecklistForm({ userId }: { userId: string }) {
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Creating…" : "Create Template"}
             </Button>
           </form>

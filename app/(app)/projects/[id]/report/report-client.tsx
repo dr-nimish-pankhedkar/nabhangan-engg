@@ -72,7 +72,7 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
         <CardHeader className="pb-3"><CardTitle className="text-sm">Upload Report File</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <input ref={fileRef} type="file" className="hidden" onChange={handleFileUpload} />
-          <Button variant="outline" className="gap-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
+          <Button variant="outline" className="w-full sm:w-auto gap-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
             <Upload className="h-4 w-4" />{uploading ? "Uploading…" : "Choose File"}
           </Button>
           {uploading && <Progress value={uploadProgress} className="h-2" />}
@@ -102,7 +102,7 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
+                <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
               </form>
             </Form>
           )}
@@ -111,7 +111,7 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      <Button onClick={handleSubmitForReview} className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+      <Button onClick={handleSubmitForReview} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
         Submit for Review
       </Button>
     </div>
