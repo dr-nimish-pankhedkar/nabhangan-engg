@@ -7,6 +7,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS, ROLE_LABELS, UserRole } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
 
   if (profile.role === "admin") {
     const [projectsRes, staffRes, assignmentsRes] = await Promise.all([
-      supabase.from("projects").select("status"),
+      supabase.from("projects").select("id, bank_name, status"),
       supabase.from("profiles").select("id, full_name, role, designation, is_active").eq("is_active", true).order("full_name"),
       supabase
         .from("project_assignments")
@@ -40,8 +41,13 @@ export default async function DashboardPage() {
     const staff = staffRes.data || [];
     const allAssignments = assignmentsRes.data || [];
 
+    const projectsByStage = PROJECT_STAGES.reduce((acc, s) => {
+      acc[s.value] = projects.filter((p: any) => p.status === s.value);
+      return acc;
+    }, {} as Record<ProjectStatus, any[]>);
+
     const counts = PROJECT_STAGES.reduce((acc, s) => {
-      acc[s.value] = projects.filter((p) => p.status === s.value).length;
+      acc[s.value] = projectsByStage[s.value].length;
       return acc;
     }, {} as Record<ProjectStatus, number>);
 
@@ -57,6 +63,15 @@ export default async function DashboardPage() {
     }, {});
 
     const maxLoad = Math.max(1, ...staff.map((s) => (activeAssignmentsByUser[s.id] || []).length));
+
+    const loadBuckets = { free: 0, light: 0, moderate: 0, heavy: 0 };
+    staff.forEach((s) => {
+      const load = (activeAssignmentsByUser[s.id] || []).length;
+      if (load === 0) loadBuckets.free++;
+      else if (load <= 1) loadBuckets.light++;
+      else if (load <= 2) loadBuckets.moderate++;
+      else loadBuckets.heavy++;
+    });
 
     return (
       <div>
@@ -77,22 +92,42 @@ export default async function DashboardPage() {
         <Card className="border-slate-200 mb-8">
           <CardHeader>
             <CardTitle className="text-sm text-slate-600">Stage Distribution</CardTitle>
+            <p className="text-xs text-slate-400">Click a stage to see which projects are in it</p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-1">
               {PROJECT_STAGES.map((stage) => {
                 const pct = total > 0 ? Math.round((counts[stage.value] / total) * 100) : 0;
+                const stageProjects = projectsByStage[stage.value];
                 return (
-                  <div key={stage.value} className="flex items-center gap-3">
-                    <span className="text-xs text-slate-500 w-16">{stage.label}</span>
-                    <div className="flex-1 bg-slate-100 rounded-full h-2">
-                      <div
-                        className="bg-[#1e3a5f] h-2 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                  <details key={stage.value} className="group">
+                    <summary className="flex items-center gap-3 cursor-pointer list-none py-1.5 px-1 -mx-1 rounded-md hover:bg-slate-50 transition-colors [&::-webkit-details-marker]:hidden">
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-open:rotate-90 shrink-0" />
+                      <span className="text-xs text-slate-500 w-16 shrink-0">{stage.label}</span>
+                      <div className="flex-1 bg-slate-100 rounded-full h-2">
+                        <div
+                          className="bg-[#1e3a5f] h-2 rounded-full transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-slate-400 w-8 text-right shrink-0">{counts[stage.value]}</span>
+                    </summary>
+                    <div className="pl-[88px] pr-9 pt-1.5 pb-2">
+                      {stageProjects.length === 0 ? (
+                        <p className="text-xs text-slate-400">No projects in this stage.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {stageProjects.map((p: any) => (
+                            <Link key={p.id} href={`/projects/${p.id}`}>
+                              <Badge variant="outline" className="text-xs font-normal text-slate-600 hover:border-[#1e3a5f] hover:text-[#1e3a5f] cursor-pointer transition-colors">
+                                {p.bank_name}
+                              </Badge>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-slate-400 w-8 text-right">{counts[stage.value]}</span>
-                  </div>
+                  </details>
                 );
               })}
             </div>
@@ -111,63 +146,87 @@ export default async function DashboardPage() {
             {staff.length === 0 ? (
               <p className="text-sm text-slate-500">No active staff members.</p>
             ) : (
-              <div className="space-y-4">
-                {staff.map((s: any) => {
-                  const active = activeAssignmentsByUser[s.id] || [];
-                  const load = active.length;
-                  const pct = Math.round((load / maxLoad) * 100);
-                  const barColor =
-                    load === 0 ? "bg-slate-200" :
-                    load <= 1 ? "bg-green-500" :
-                    load <= 2 ? "bg-amber-500" :
-                    "bg-red-500";
-                  const loadLabel =
-                    load === 0 ? "Free" :
-                    load <= 1 ? "Light" :
-                    load <= 2 ? "Moderate" :
-                    "Heavy";
-                  const loadBadgeColor =
-                    load === 0 ? "bg-slate-100 text-slate-500" :
-                    load <= 1 ? "bg-green-100 text-green-700" :
-                    load <= 2 ? "bg-amber-100 text-amber-700" :
-                    "bg-red-100 text-red-700";
+              <>
+                {/* Legend / summary */}
+                <div className="flex flex-wrap gap-2 mb-5">
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                    <span className="w-2 h-2 rounded-full bg-slate-300" /> {loadBuckets.free} Free
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-green-50 text-green-700">
+                    <span className="w-2 h-2 rounded-full bg-green-500" /> {loadBuckets.light} Light
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" /> {loadBuckets.moderate} Moderate
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700">
+                    <span className="w-2 h-2 rounded-full bg-red-500" /> {loadBuckets.heavy} Heavy
+                  </span>
+                </div>
 
-                  return (
-                    <div key={s.id}>
-                      <div className="flex items-start sm:items-center justify-between flex-wrap gap-y-1.5 mb-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                            {s.full_name.slice(0, 2).toUpperCase()}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {staff.map((s: any) => {
+                    const active = activeAssignmentsByUser[s.id] || [];
+                    const load = active.length;
+                    const pct = Math.round((load / maxLoad) * 100);
+                    const ringColor =
+                      load === 0 ? "text-slate-300" :
+                      load <= 1 ? "text-green-500" :
+                      load <= 2 ? "text-amber-500" :
+                      "text-red-500";
+                    const loadLabel =
+                      load === 0 ? "Free" :
+                      load <= 1 ? "Light" :
+                      load <= 2 ? "Moderate" :
+                      "Heavy";
+                    const loadBadgeColor =
+                      load === 0 ? "bg-slate-100 text-slate-500" :
+                      load <= 1 ? "bg-green-100 text-green-700" :
+                      load <= 2 ? "bg-amber-100 text-amber-700" :
+                      "bg-red-100 text-red-700";
+
+                    const radius = 18;
+                    const circumference = 2 * Math.PI * radius;
+                    const dash = (Math.max(pct, load > 0 ? 10 : 0) / 100) * circumference;
+
+                    return (
+                      <div key={s.id} className="rounded-lg border border-slate-200 p-3 flex items-start gap-3">
+                        <div className="relative shrink-0 w-12 h-12">
+                          <svg width="48" height="48" viewBox="0 0 48 48" className="-rotate-90">
+                            <circle cx="24" cy="24" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
+                            <circle
+                              cx="24" cy="24" r={radius} fill="none" stroke="currentColor" strokeWidth="4"
+                              strokeLinecap="round"
+                              strokeDasharray={`${dash} ${circumference}`}
+                              className={cn("transition-all", ringColor)}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-bold text-slate-700">{load}</span>
                           </div>
-                          <div className="min-w-0">
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
                             <p className="text-sm font-medium text-slate-800 leading-tight truncate">{s.full_name}</p>
-                            <p className="text-xs text-slate-400 leading-tight truncate">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
+                            <Badge className={cn(loadBadgeColor, "shrink-0")}>{loadLabel}</Badge>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge className={loadBadgeColor}>{loadLabel}</Badge>
-                          <span className="text-xs text-slate-400 w-auto sm:w-16 text-right whitespace-nowrap">{load} active task{load === 1 ? "" : "s"}</span>
+                          <p className="text-xs text-slate-400 leading-tight truncate mt-0.5">{s.designation || ROLE_LABELS[s.role as UserRole]}</p>
+                          {active.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {active.map((a: any, i: number) => (
+                                <Badge key={i} variant="outline" className="text-xs font-normal text-slate-500">
+                                  {a.projects?.bank_name} · {a.stage}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-300 mt-2">No active tasks</p>
+                          )}
                         </div>
                       </div>
-                      <div className="flex-1 bg-slate-100 rounded-full h-2 sm:ml-9">
-                        <div
-                          className={`h-2 rounded-full transition-all ${barColor}`}
-                          style={{ width: `${Math.max(pct, load > 0 ? 8 : 0)}%` }}
-                        />
-                      </div>
-                      {active.length > 0 && (
-                        <div className="sm:ml-9 mt-1.5 flex flex-wrap gap-1.5">
-                          {active.map((a: any, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs font-normal text-slate-500">
-                              {a.projects?.bank_name} · {a.stage}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
