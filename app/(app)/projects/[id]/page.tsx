@@ -55,15 +55,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const isComplete = project.status === "review";
 
   // Fetch history for all stages
-  const [filesRes, responsesRes, timelogsRes] = await Promise.all([
+  const [filesRes, responsesRes, timelogsRes, assignmentsRes] = await Promise.all([
     supabase.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
     supabase.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
     supabase.from("time_logs").select("*, profiles(full_name)").eq("project_id", id).order("logged_at", { ascending: false }),
+    supabase.from("project_assignments").select("*, profiles(full_name, role)").eq("project_id", id),
   ]);
 
   const files = filesRes.data || [];
   const responses = responsesRes.data || [];
   const timelogs = timelogsRes.data || [];
+  const assignments = assignmentsRes.data || [];
 
   // Detect projects stuck on a stage whose checklist was already submitted
   // (e.g. legacy submissions from before checklist-submit auto-advanced the stage)
@@ -186,14 +188,27 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           const stageFiles = files.filter((f: any) => f.stage === stage.value);
           const stageResponses = responses.filter((r: any) => r.stage === stage.value);
           const stageTimelogs = timelogs.filter((t: any) => t.stage === stage.value);
+          const stageAssignees = assignments.filter((a: any) => a.stage === stage.value);
           const hasContent = stageFiles.length > 0 || stageResponses.length > 0 || stageTimelogs.length > 0;
 
           return (
             <Card key={stage.value} className="border-slate-200">
               <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
                   <Badge className={STATUS_COLORS[stage.value]}>{stage.label}</Badge>
-                  {!hasContent && <span className="text-xs text-slate-400 font-normal">No activity yet</span>}
+                  {stageAssignees.length > 0 ? (
+                    <span className="text-xs text-slate-500 font-normal flex items-center gap-1 flex-wrap">
+                      Assigned to:
+                      {stageAssignees.map((a: any) => (
+                        <Badge key={a.id} variant="outline" className="text-xs font-normal text-[#1e3a5f] border-[#1e3a5f]/30">
+                          {a.profiles?.full_name}
+                        </Badge>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400 font-normal">No one assigned yet</span>
+                  )}
+                  {!hasContent && <span className="text-xs text-slate-400 font-normal">· No activity yet</span>}
                 </CardTitle>
               </CardHeader>
               {hasContent && (
