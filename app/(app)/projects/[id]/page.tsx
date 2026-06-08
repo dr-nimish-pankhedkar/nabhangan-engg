@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, FileText, ShieldCheck, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StartSurveyButton from "./start-survey-button";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -82,6 +83,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           )}
         </CardContent>
       </Card>
+
+      {/* Lead → Survey kickoff */}
+      {project.status === "lead" && profile?.role === "admin" && (
+        <StartSurveyButton projectId={id} />
+      )}
 
       {/* Completion banner */}
       {isComplete && (

@@ -33,8 +33,7 @@ export default function SurveyStageClient({
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [advancing, setAdvancing] = useState(false);
-  const [advanceError, setAdvanceError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { register, handleSubmit, reset } = useForm();
@@ -70,6 +69,8 @@ export default function SurveyStageClient({
   async function onSubmit(data: any) {
     if (!template) return;
     setError(null);
+    setSubmitting(true);
+
     const result = await submitChecklist({
       projectId,
       userId,
@@ -80,22 +81,20 @@ export default function SurveyStageClient({
     });
     if (result.error) {
       setError(result.error);
-    } else {
-      setSubmitted(true);
-      reset();
+      setSubmitting(false);
+      return;
     }
-  }
 
-  async function handleAdvance() {
-    setAdvanceError(null);
-    setAdvancing(true);
-    const result = await advanceStage(projectId, "drafting");
-    if (result.error) {
-      setAdvanceError(result.error);
-      setAdvancing(false);
-    } else {
-      router.push(`/projects/${projectId}`);
+    const advanceResult = await advanceStage(projectId, "drafting");
+    if (advanceResult.error) {
+      setError(advanceResult.error);
+      setSubmitting(false);
+      return;
     }
+
+    setSubmitted(true);
+    reset();
+    router.push(`/projects/${projectId}`);
   }
 
   return (
@@ -178,9 +177,10 @@ export default function SurveyStageClient({
                   <Label htmlFor="remarks">Remarks</Label>
                   <Input id="remarks" {...register("_remarks")} />
                 </div>
-                <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
-                  Submit Checklist
+                <Button type="submit" disabled={submitting} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+                  {submitting ? "Submitting…" : "Submit & Complete Survey → Drafting"}
                 </Button>
+                {error && <p className="text-sm text-red-500">{error}</p>}
               </form>
             )}
           </CardContent>
@@ -192,12 +192,6 @@ export default function SurveyStageClient({
           </CardContent>
         </Card>
       )}
-
-      {advanceError && <p className="text-sm text-red-500">{advanceError}</p>}
-
-      <Button onClick={handleAdvance} disabled={advancing} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
-        {advancing ? "Advancing…" : "Mark Survey Complete → Drafting"}
-      </Button>
     </div>
   );
 }
