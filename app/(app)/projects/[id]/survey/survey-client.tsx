@@ -7,10 +7,11 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { ChecklistTemplate } from "@/lib/types";
 import { uploadProjectFile } from "@/lib/storage";
-import { submitChecklist, logFileRecord } from "./actions";
+import { submitChecklist, logFileRecord, advanceStage } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,10 +28,13 @@ export default function SurveyStageClient({
   userId: string;
   templates: ChecklistTemplate[];
 }) {
+  const router = useRouter();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { register, handleSubmit, reset } = useForm();
@@ -79,6 +83,18 @@ export default function SurveyStageClient({
     } else {
       setSubmitted(true);
       reset();
+    }
+  }
+
+  async function handleAdvance() {
+    setAdvanceError(null);
+    setAdvancing(true);
+    const result = await advanceStage(projectId, "drafting");
+    if (result.error) {
+      setAdvanceError(result.error);
+      setAdvancing(false);
+    } else {
+      router.push(`/projects/${projectId}`);
     }
   }
 
@@ -176,6 +192,12 @@ export default function SurveyStageClient({
           </CardContent>
         </Card>
       )}
+
+      {advanceError && <p className="text-sm text-red-500">{advanceError}</p>}
+
+      <Button onClick={handleAdvance} disabled={advancing} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+        {advancing ? "Advancing…" : "Mark Survey Complete → Drafting"}
+      </Button>
     </div>
   );
 }

@@ -30,6 +30,13 @@ export async function submitChecklist(input: {
   return {};
 }
 
+export async function advanceStage(projectId: string, newStatus: ProjectStatus): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("projects").update({ status: newStatus }).eq("id", projectId);
+  if (error) return { error: error.message };
+  return {};
+}
+
 export async function logFileRecord(input: {
   projectId: string;
   userId: string;
