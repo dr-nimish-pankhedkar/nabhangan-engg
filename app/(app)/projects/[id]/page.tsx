@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, ChevronRight } from "lucide-react";
+import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, FileText, ShieldCheck, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
@@ -22,6 +22,14 @@ const STAGE_ROUTES: Record<ProjectStatus, string> = {
 };
 
 const STAGE_ORDER: ProjectStatus[] = ["lead", "survey", "drafting", "report", "review"];
+
+const STAGE_ICONS: Record<ProjectStatus, React.ElementType> = {
+  lead: Lightbulb,
+  survey: MapPinned,
+  drafting: PenTool,
+  report: FileText,
+  review: ShieldCheck,
+};
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
@@ -41,6 +49,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!project) notFound();
 
   const currentStageIdx = STAGE_ORDER.indexOf(project.status);
+  const progressPct = Math.round((currentStageIdx / (STAGE_ORDER.length - 1)) * 100);
+  const isComplete = project.status === "review";
 
   // Fetch history for all stages
   const [filesRes, responsesRes, timelogsRes] = await Promise.all([
@@ -73,6 +83,29 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </CardContent>
       </Card>
 
+      {/* Completion banner */}
+      {isComplete && (
+        <div className="flex items-center gap-3 mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+          <PartyPopper className="h-5 w-5 text-green-600 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-green-700">Project reached final stage — Review</p>
+            <p className="text-xs text-green-600/80">All milestones completed. This project is ready for sign-off.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Progress */}
+      <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
+        <span>Project Progress</span>
+        <span className="font-medium text-[#1e3a5f]">{progressPct}% complete</span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-2 mb-8">
+        <div
+          className={cn("h-2 rounded-full transition-all", isComplete ? "bg-green-500" : "bg-[#1e3a5f]")}
+          style={{ width: `${Math.max(progressPct, 6)}%` }}
+        />
+      </div>
+
       {/* Stepper */}
       <div className="flex items-center mb-8">
         {PROJECT_STAGES.map((stage, idx) => {
@@ -80,38 +113,39 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           const active = idx === currentStageIdx;
           const route = STAGE_ROUTES[stage.value];
           const href = route ? `/projects/${id}/${route}` : null;
+          const StageIcon = STAGE_ICONS[stage.value];
+          const isFinalActive = active && stage.value === "review";
+
+          const node = (
+            <div className={`relative w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
+              done ? "bg-[#1e3a5f] border-[#1e3a5f]" :
+              isFinalActive ? "border-green-500 bg-green-50" :
+              active ? "border-[#1e3a5f] bg-white" :
+              "border-slate-300 bg-white"
+            }`}>
+              {done ? (
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+              ) : (
+                <StageIcon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
+                  isFinalActive ? "text-green-600" : active ? "text-[#1e3a5f]" : "text-slate-300"
+                }`} />
+              )}
+              {isFinalActive && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                </span>
+              )}
+            </div>
+          );
 
           return (
             <div key={stage.value} className="flex items-center flex-1 last:flex-none min-w-0">
               <div className="flex flex-col items-center min-w-0">
-                {href ? (
-                  <Link href={href}>
-                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
-                      done ? "bg-[#1e3a5f] border-[#1e3a5f]" :
-                      active ? "border-[#1e3a5f] bg-white" :
-                      "border-slate-300 bg-white"
-                    }`}>
-                      {done ? (
-                        <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                      ) : (
-                        <Circle className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${active ? "text-[#1e3a5f]" : "text-slate-300"}`} />
-                      )}
-                    </div>
-                  </Link>
-                ) : (
-                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 ${
-                    done ? "bg-[#1e3a5f] border-[#1e3a5f]" :
-                    active ? "border-[#1e3a5f] bg-white" :
-                    "border-slate-300 bg-white"
-                  }`}>
-                    {done ? (
-                      <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                    ) : (
-                      <Circle className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${active ? "text-[#1e3a5f]" : "text-slate-300"}`} />
-                    )}
-                  </div>
-                )}
-                <span className={`text-[10px] sm:text-xs mt-1 text-center truncate max-w-[60px] sm:max-w-none ${active ? "text-[#1e3a5f] font-medium" : "text-slate-400"}`}>
+                {href ? <Link href={href}>{node}</Link> : node}
+                <span className={`text-[10px] sm:text-xs mt-1 text-center truncate max-w-[60px] sm:max-w-none ${
+                  isFinalActive ? "text-green-600 font-medium" : active ? "text-[#1e3a5f] font-medium" : "text-slate-400"
+                }`}>
                   {stage.label}
                 </span>
               </div>
