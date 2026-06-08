@@ -7,6 +7,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, FolderKanban, Users, ClipboardList, UserCheck, LogOut, Menu, X } from "lucide-react";
@@ -106,9 +107,14 @@ export default function Sidebar({ profile }: { profile: Profile }) {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 bg-[#1e3a5f] text-white flex-col">
-        <div className="px-6 py-5 border-b border-[#2d5080]">
-          <p className="font-bold text-base leading-tight">Nabhangan Engineers</p>
-          <p className="text-xs text-blue-200 mt-0.5">Workflow Tracker</p>
+        <div className="px-5 py-5 border-b border-[#2d5080] flex items-center gap-3">
+          <div className="bg-white rounded-lg p-1 shrink-0">
+            <Image src="/logo.png" alt="Nabhangan Engineers logo" width={40} height={40} className="rounded-md" priority />
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-base leading-tight truncate">Nabhangan Engineers</p>
+            <p className="text-xs text-blue-200 mt-0.5">Workflow Tracker</p>
+          </div>
         </div>
         <NavLinks />
         <ProfileFooter />
@@ -123,7 +129,12 @@ export default function Sidebar({ profile }: { profile: Profile }) {
         >
           <Menu className="h-6 w-6" />
         </button>
-        <p className="font-bold text-sm leading-tight truncate px-2">Nabhangan Engineers</p>
+        <div className="flex items-center gap-2 min-w-0 px-2">
+          <div className="bg-white rounded-md p-0.5 shrink-0">
+            <Image src="/logo.png" alt="Nabhangan Engineers logo" width={26} height={26} className="rounded-sm" priority />
+          </div>
+          <p className="font-bold text-sm leading-tight truncate">Nabhangan Engineers</p>
+        </div>
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarFallback className="bg-blue-400 text-white text-xs">
             {initials}
@@ -147,10 +158,15 @@ export default function Sidebar({ profile }: { profile: Profile }) {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#2d5080]">
-          <div className="min-w-0">
-            <p className="font-bold text-base leading-tight truncate">Nabhangan Engineers</p>
-            <p className="text-xs text-blue-200 mt-0.5">Workflow Tracker</p>
+        <div className="flex items-center justify-between px-5 py-5 border-b border-[#2d5080]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="bg-white rounded-lg p-1 shrink-0">
+              <Image src="/logo.png" alt="Nabhangan Engineers logo" width={36} height={36} className="rounded-md" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-base leading-tight truncate">Nabhangan Engineers</p>
+              <p className="text-xs text-blue-200 mt-0.5">Workflow Tracker</p>
+            </div>
           </div>
           <button
             onClick={() => setOpen(false)}
