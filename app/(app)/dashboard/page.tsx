@@ -53,11 +53,20 @@ export default async function DashboardPage() {
 
     const total = projects.length;
 
-    // Active occupancy: assignments whose project is currently in that exact stage (i.e. an open task)
+    const STAGE_ORDER = PROJECT_STAGES.map((s) => s.value);
+
+    // Workload per staff member: any assignment whose stage hasn't been
+    // completed yet (the project's current stage is at or before it) — this
+    // covers both work-in-progress ("active now") and queued/upcoming tasks,
+    // so an assigned-but-not-yet-started task still counts as "occupied".
     const activeAssignmentsByUser = allAssignments.reduce((acc: Record<string, any[]>, a: any) => {
-      if (a.projects?.status === a.stage) {
+      const status = a.projects?.status;
+      if (!status) return acc;
+      const stageIdx = STAGE_ORDER.indexOf(a.stage);
+      const statusIdx = STAGE_ORDER.indexOf(status);
+      if (stageIdx >= statusIdx) {
         acc[a.user_id] = acc[a.user_id] || [];
-        acc[a.user_id].push(a);
+        acc[a.user_id].push({ ...a, isActive: stageIdx === statusIdx });
       }
       return acc;
     }, {});
@@ -148,6 +157,9 @@ export default async function DashboardPage() {
             ) : (
               <>
                 {/* Legend / summary */}
+                <p className="text-xs text-slate-400 mb-2">
+                  Counts every assigned task not yet completed — work currently in progress as well as queued/upcoming stages.
+                </p>
                 <div className="flex flex-wrap gap-2 mb-5">
                   <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
                     <span className="w-2 h-2 rounded-full bg-slate-300" /> {loadBuckets.free} Free
@@ -213,13 +225,22 @@ export default async function DashboardPage() {
                           {active.length > 0 ? (
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               {active.map((a: any, i: number) => (
-                                <Badge key={i} variant="outline" className="text-xs font-normal text-slate-500">
-                                  {a.projects?.bank_name} · {a.stage}
+                                <Badge
+                                  key={i}
+                                  variant="outline"
+                                  className={cn(
+                                    "text-xs font-normal",
+                                    a.isActive
+                                      ? "text-[#1e3a5f] border-[#1e3a5f]/30 bg-[#1e3a5f]/5"
+                                      : "text-slate-400 border-dashed"
+                                  )}
+                                >
+                                  {a.projects?.bank_name} · {a.stage}{!a.isActive && " (queued)"}
                                 </Badge>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-slate-300 mt-2">No active tasks</p>
+                            <p className="text-xs text-slate-300 mt-2">No tasks assigned</p>
                           )}
                         </div>
                       </div>
