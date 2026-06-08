@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, FileText, ShieldCheck, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StartSurveyButton from "./start-survey-button";
+import AdvanceStageButton from "./advance-stage-button";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -64,6 +65,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const responses = responsesRes.data || [];
   const timelogs = timelogsRes.data || [];
 
+  // Detect projects stuck on a stage whose checklist was already submitted
+  // (e.g. legacy submissions from before checklist-submit auto-advanced the stage)
+  const nextStageIdx = currentStageIdx + 1;
+  const nextStage = nextStageIdx < STAGE_ORDER.length ? STAGE_ORDER[nextStageIdx] : null;
+  const currentStageDone = !isComplete && responses.some((r: any) => r.stage === project.status);
+
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6 min-w-0 flex-wrap">
@@ -87,6 +94,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {/* Lead → Survey kickoff */}
       {project.status === "lead" && profile?.role === "admin" && (
         <StartSurveyButton projectId={id} />
+      )}
+
+      {/* Stuck-stage recovery: checklist already submitted but stage didn't advance */}
+      {currentStageDone && nextStage && profile?.role === "admin" && (
+        <AdvanceStageButton
+          projectId={id}
+          nextStatus={nextStage}
+          nextLabel={PROJECT_STAGES.find((s) => s.value === nextStage)?.label || nextStage}
+        />
       )}
 
       {/* Completion banner */}
