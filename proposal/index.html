@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nabhangan Engineers — Workflow Tracker Proposal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy: #1e3a5f;
+    --navy-light: #2d5080;
+    --amber: #f59e0b;
+    --green: #16a34a;
+    --slate: #64748b;
+    --light: #f8fafc;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+
+  /* ─── slide container ─── */
+  .slide {
+    width: 1000px;
+    min-height: 562px;
+    margin: 24px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.12);
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  /* ─── Slide 1 — Cover ─── */
+  .slide-cover {
+    background: linear-gradient(135deg, var(--navy) 60%, #2d5080 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 80px;
+    min-height: 562px;
+    position: relative;
+  }
+  .slide-cover .logo-wrap {
+    background: #fff;
+    border-radius: 20px;
+    padding: 14px;
+    margin-bottom: 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  }
+  .slide-cover .logo-wrap img { width: 80px; height: 80px; border-radius: 10px; display: block; }
+  .slide-cover h1 { font-size: 36px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 10px; }
+  .slide-cover h2 { font-size: 18px; font-weight: 500; color: rgba(255,255,255,.75); margin-bottom: 32px; }
+  .slide-cover .tag {
+    background: var(--amber);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 999px;
+  }
+  .slide-cover .prepared {
+    position: absolute;
+    bottom: 28px;
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+    letter-spacing: .04em;
+  }
+
+  /* ─── generic slide layout ─── */
+  .slide-inner { padding: 48px 56px; }
+  .slide-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 8px;
+  }
+  .slide-title { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 28px; line-height: 1.2; }
+  .slide-subtitle { font-size: 14px; color: var(--slate); margin-bottom: 32px; line-height: 1.6; }
+
+  /* ─── problem grid ─── */
+  .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .problem-card {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .problem-card .icon { font-size: 22px; margin-bottom: 8px; }
+  .problem-card h3 { font-size: 13px; font-weight: 700; color: #991b1b; margin-bottom: 4px; }
+  .problem-card p { font-size: 12px; color: #7f1d1d; line-height: 1.5; }
+
+  /* ─── feature list ─── */
+  .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .feature-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--light);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+  }
+  .feature-item .feat-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--navy); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; shrink: 0; flex-shrink: 0;
+  }
+  .feature-item h3 { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+  .feature-item p { font-size: 11px; color: var(--slate); line-height: 1.5; }
+
+  /* ─── roadmap ─── */
+  .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .roadmap-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+  }
+  .roadmap-card.soon { background: #eff6ff; border-color: #bfdbfe; }
+  .roadmap-card.later { background: #f0fdf4; border-color: #bbf7d0; }
+  .roadmap-card.future { background: #fafafa; border-color: #e2e8f0; }
+  .roadmap-card .phase {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .roadmap-card.soon .phase { color: #1d4ed8; }
+  .roadmap-card.later .phase { color: #15803d; }
+  .roadmap-card.future .phase { color: #64748b; }
+  .roadmap-card ul { padding-left: 0; list-style: none; }
+  .roadmap-card ul li { font-size: 12px; color: #334155; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,.05); }
+  .roadmap-card ul li:last-child { border-bottom: none; }
+  .roadmap-card ul li::before { content: "→ "; font-weight: 600; opacity: .6; }
+
+  /* ─── pricing ─── */
+  .pricing-wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .plan-card {
+    border-radius: 12px;
+    padding: 24px 20px;
+    border: 2px solid #e2e8f0;
+    text-align: center;
+    position: relative;
+  }
+  .plan-card.highlight {
+    border-color: var(--navy);
+    background: linear-gradient(180deg, #eff6ff 0%, #fff 100%);
+  }
+  .plan-card .popular-tag {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--amber); color: #fff;
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 3px 12px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .plan-card .plan-name { font-size: 13px; font-weight: 700; color: var(--slate); margin-bottom: 12px; }
+  .plan-card .plan-price { font-size: 28px; font-weight: 800; color: var(--navy); }
+  .plan-card .plan-price span { font-size: 13px; font-weight: 500; color: var(--slate); }
+  .plan-card .plan-save {
+    display: inline-block;
+    background: #dcfce7; color: var(--green);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px; margin-top: 6px;
+  }
+  .plan-card .plan-save.empty { visibility: hidden; }
+  .plan-card .plan-note { font-size: 11px; color: var(--slate); margin-top: 10px; line-height: 1.5; }
+
+  /* ─── setup fee ─── */
+  .setup-box {
+    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .setup-box .setup-left { flex: 1; }
+  .setup-box h3 { font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 4px; }
+  .setup-box p { font-size: 12px; color: #78350f; line-height: 1.6; }
+  .setup-box .setup-price { text-align: right; flex-shrink: 0; }
+  .setup-box .original { font-size: 13px; color: #9ca3af; text-decoration: line-through; display: block; }
+  .setup-box .discounted { font-size: 30px; font-weight: 800; color: var(--navy); }
+  .setup-box .discounted small { font-size: 13px; font-weight: 500; color: var(--slate); }
+
+  /* ─── offer slide ─── */
+  .offer-slide {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a3354 100%);
+    padding: 48px 56px;
+    min-height: 562px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .offer-slide .offer-title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .offer-slide .offer-sub { font-size: 14px; color: rgba(255,255,255,.6); margin-bottom: 36px; }
+  .offer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+  .offer-item {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .offer-item .offer-label { font-size: 11px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+  .offer-item .offer-val { font-size: 22px; font-weight: 800; color: #fff; }
+  .offer-item .offer-note { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 4px; }
+  .offer-item.highlight-item { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.4); }
+  .offer-item.highlight-item .offer-val { color: var(--amber); }
+  .cta-box {
+    background: var(--amber);
+    border-radius: 10px;
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cta-box .cta-text { font-size: 14px; font-weight: 700; color: #fff; }
+  .cta-box .cta-sub { font-size: 11px; color: rgba(255,255,255,.8); margin-top: 2px; }
+  .cta-box .cta-expire { font-size: 12px; font-weight: 700; color: #fff; background: rgba(0,0,0,.2); padding: 6px 14px; border-radius: 6px; }
+
+  /* ─── print ─── */
+  @media print {
+    body { background: #fff; }
+    .slide { margin: 0; border-radius: 0; box-shadow: none; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     SLIDE 1 — COVER
+══════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-cover">
+    <div class="logo-wrap">
+      <img src="../public/logo.png" alt="Nabhangan Engineers logo" onerror="this.style.display='none'" />
+    </div>
+    <h1>Nabhangan Engineers<br/>Workflow Tracker</h1>
+    <h2>Your projects. Your team. One platform.</h2>
+    <div class="tag">Product Proposal &amp; Pricing</div>
+    <div class="prepared">Prepared by Dr. Nimish Pankhedkar · Chemiligence Solutions · June 2026</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SLIDE 2 — THE PROBLEM
+══════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-inner">
+    <div class="slide-label">The Challenge</div>
+    <div class="slide-title">Running a valuation firm on WhatsApp &amp; Excel is costing you</div>
+    <div class="slide-subtitle">Every missed update, misplaced file, and forgotten deadline hurts your reputation with banks — and your bottom line.</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">📱</div>
+        <h3>WhatsApp chaos</h3>
+        <p>Survey photos, checklist updates, and client messages all mixed in one thread. Nothing is traceable.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">📊</div>
+        <h3>Excel overload</h3>
+        <p>Multiple sheets per project, constantly out of date, and only one person can edit at a time.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">🔍</div>
+        <h3>No visibility</h3>
+        <p>You don't know if the surveyor has submitted the report or if the draughtsman has even started.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">⏰</div>
+        <h3>Deadline misses</h3>
+        <p>Banks have strict timelines. Without tracking, projects slip — and so does your relationship with the bank.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SLIDE 3 — CURRENT FEATURES
+══════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-inner">
+    <div class="slide-label">What's built today</div>
+    <div class="slide-title">A complete workflow tracker, built for valuation engineers</div>
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feat-icon">📋</div>
+        <div>
+          <h3>5-Stage Project Pipeline</h3>
+          <p>Lead → Survey → Drafting → Report → Review. Every project moves through a defined, trackable workflow.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">✅</div>
+        <div>
+          <h3>Digital Checklists</h3>
+          <p>Bank-specific checklists (Home Loan, etc.) submitted digitally per stage. No paper, no lost forms.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">👥</div>
+        <div>
+          <h3>Staff Assignment &amp; Occupancy</h3>
+          <p>Assign surveyors, draughtsmen, and report staff per project. See who is free, light, or overloaded.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">📁</div>
+        <div>
+          <h3>File Uploads Per Stage</h3>
+          <p>Attach survey photos, drawings, and documents directly to the relevant project stage.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">📊</div>
+        <div>
+          <h3>Live Dashboard</h3>
+          <p>See all projects by stage at a glance. Stage distribution bar, staff occupancy heat map.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feat-icon">🔐</div>
+        <div>
+          <h3>Role-Based Access</h3>
+          <p>Admin sees everything. Staff see only their assigned tasks. Secure, cloud-hosted, always available.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SLIDE 4 — ROADMAP
+══════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-inner">
+    <div class="slide-label">What's coming</div>
+    <div class="slide-title">The full version — built around your feedback</div>
+    <div class="slide-subtitle">Subscribing now means you influence what gets built next, at the lowest price you'll ever pay.</div>
+    <div class="roadmap-grid">
+      <div class="roadmap-card soon">
+        <div class="phase">🔜 Coming Soon</div>
+        <ul>
+          <li>PDF report generation</li>
+          <li>WhatsApp / email alerts</li>
+          <li>Time tracking per stage</li>
+          <li>Per-bank report templates<br/>(HDFC, SBI, BOM…)</li>
+        </ul>
+      </div>
+      <div class="roadmap-card later">
+        <div class="phase">📅 Next Quarter</div>
+        <ul>
+          <li>Client / bank portal</li>
+          <li>Mobile-optimised PWA</li>
+          <li>Offline mode for surveyors</li>
+          <li>GPS location tagging</li>
+        </ul>
+      </div>
+      <div class="roadmap-card future">
+        <div class="phase">🔮 Full Version</div>
+        <ul>
+          <li>Payroll &amp; HR module</li>
+          <li>Compliance audit trail</li>
+          <li>Custom branding per firm</li>
+          <li>Multi-branch support</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SLIDE 5 — PRICING
+══════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-inner">
+    <div class="slide-label">Pricing</div>
+    <div class="slide-title">Simple, transparent pricing — up to 5 users included</div>
+
+    <!-- Setup fee -->
+    <div class="setup-box" style="margin-bottom:28px">
+      <div class="setup-left">
+        <h3>One-Time Setup Fee</h3>
+        <p>
+          Includes: cloud deployment on your own domain, SSL certificate (HTTPS), onboarding session,
+          and 3 months of priority support. <strong>Domain &amp; SSL costs covered.</strong>
+        </p>
+      </div>
+      <div class="setup-price">
+        <span class="original">₹12,000</span>
+        <div class="discounted">₹6,000 <small>one-time</small></div>
+      </div>
+    </div>
+
+    <!-- Subscription plans -->
+    <div class="pricing-wrap">
+      <div class="plan-card">
+        <div class="plan-name">Monthly</div>
+        <div class="plan-price">₹600 <span>/ month</span></div>
+        <div class="plan-save empty">—</div>
+        <div class="plan-note">Up to 5 users<br/>Cancel anytime</div>
+      </div>
+      <div class="plan-card highlight">
+        <div class="popular-tag">⭐ Most Popular</div>
+        <div class="plan-name">Quarterly</div>
+        <div class="plan-price">₹1,599 <span>/ quarter</span></div>
+        <div class="plan-save">Save ₹201 vs monthly</div>
+        <div class="plan-note">Up to 5 users<br/>≈ ₹533/month</div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Yearly</div>
+        <div class="plan-price">₹5,999 <span>/ year</span></div>
+        <div class="plan-save">Save ₹1,201 vs monthly</div>
+        <div class="plan-note">Up to 5 users<br/>≈ ₹500/month</div>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:#94a3b8;text-align:center">Additional users beyond 5: ₹99/user/month &nbsp;·&nbsp; All plans include updates &amp; bug fixes</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SLIDE 6 — SPECIAL OFFER / CTA
+══════════════════════════════════ -->
+<div class="slide">
+  <div class="offer-slide">
+    <div class="offer-title">Founding Customer Offer</div>
+    <div class="offer-sub">Exclusive pricing for Nabhangan Engineers — valid until 20 June 2026</div>
+
+    <div class="offer-grid">
+      <div class="offer-item highlight-item">
+        <div class="offer-label">Setup Fee (after discount)</div>
+        <div class="offer-val">₹6,000</div>
+        <div class="offer-note">Was ₹12,000 · Domain + SSL included</div>
+      </div>
+      <div class="offer-item highlight-item">
+        <div class="offer-label">Monthly Subscription</div>
+        <div class="offer-val">₹600 / mo</div>
+        <div class="offer-note">Up to 5 users · lock in this rate forever</div>
+      </div>
+      <div class="offer-item">
+        <div class="offer-label">Quarterly Plan</div>
+        <div class="offer-val">₹1,599</div>
+        <div class="offer-note">≈ ₹533/month · save ₹201/quarter</div>
+      </div>
+      <div class="offer-item">
+        <div class="offer-label">Yearly Plan</div>
+        <div class="offer-val">₹5,999</div>
+        <div class="offer-note">≈ ₹500/month · save ₹1,201/year</div>
+      </div>
+    </div>
+
+    <div class="cta-box">
+      <div>
+        <div class="cta-text">Commit before demo expires — lock in founding-customer pricing for life</div>
+        <div class="cta-sub">Contact: Dr. Nimish Pankhedkar · Chemiligence Solutions · nimish.pankhedkar@gmail.com</div>
+      </div>
+      <div class="cta-expire">Offer expires<br/>20 Jun 2026</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
