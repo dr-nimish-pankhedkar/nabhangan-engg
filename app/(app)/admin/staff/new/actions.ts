@@ -7,6 +7,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { DEMO_MAX_USERS } from "@/lib/demo";
 
 interface CreateStaffInput {
   email: string;
@@ -26,6 +27,11 @@ interface CreateStaffInput {
 
 export async function createStaffMember(input: CreateStaffInput): Promise<{ id?: string; error?: string }> {
   const adminSupabase = await createAdminClient();
+
+  const { count } = await adminSupabase.from("profiles").select("id", { count: "exact", head: true });
+  if ((count ?? 0) >= DEMO_MAX_USERS) {
+    return { error: `Demo version limit reached: only ${DEMO_MAX_USERS} users are allowed. Please contact Dr. Nimish Pankhedkar to upgrade to the full version.` };
+  }
 
   const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
     email: input.email,

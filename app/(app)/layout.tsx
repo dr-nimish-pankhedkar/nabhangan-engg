@@ -7,6 +7,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/sidebar";
+import DemoBanner from "@/components/demo-banner";
+import { demoStatus } from "@/lib/demo";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -21,10 +23,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!profile) redirect("/login");
 
+  const { expired, daysLeft } = demoStatus();
+
   return (
     <div className="flex flex-col md:flex-row md:h-screen bg-white">
       <Sidebar profile={profile} />
       <div className="flex-1 flex flex-col md:overflow-hidden">
+        <DemoBanner expired={expired} daysLeft={daysLeft} />
         <main className="flex-1 md:overflow-y-auto p-4 md:p-6">
           {children}
         </main>
