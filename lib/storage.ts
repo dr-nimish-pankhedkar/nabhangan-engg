@@ -25,8 +25,9 @@ export async function uploadProjectFile(
 
   if (error) throw new Error(error.message);
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-  return data.publicUrl;
+  // Return the storage path, not a public URL.
+  // Signed URLs should be generated server-side on demand.
+  return filePath;
 }
 
 export async function deleteProjectFile(filePath: string): Promise<void> {

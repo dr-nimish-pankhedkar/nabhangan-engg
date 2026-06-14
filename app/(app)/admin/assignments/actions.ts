@@ -8,6 +8,18 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ProjectStatus } from "@/lib/types";
+import { z } from "zod";
+
+const CreateAssignmentSchema = z.object({
+  project_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  stage: z.enum(["lead", "survey", "drafting", "report", "review"]),
+});
+
+const ReviewRequestSchema = z.object({
+  requestId: z.string().uuid(),
+  status: z.enum(["approved", "rejected"]),
+});
 
 export async function createAssignment(input: {
   project_id: string;
@@ -15,7 +27,15 @@ export async function createAssignment(input: {
   stage: ProjectStatus;
 }): Promise<{ error?: string }> {
   const supabase = await createClient();
-  const { error } = await supabase.from("project_assignments").insert(input);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") return { error: "Forbidden" };
+
+  const parsed = CreateAssignmentSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
+  const { error } = await supabase.from("project_assignments").insert(parsed.data);
   if (error) return { error: error.message };
   return {};
 }
@@ -26,10 +46,18 @@ export async function reviewTaskRequest(input: {
   status: "approved" | "rejected";
 }): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") return { error: "Forbidden" };
+
+  const parsed = ReviewRequestSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
   const { error } = await supabase
     .from("task_requests")
-    .update({ status: input.status, reviewed_by: input.adminId, reviewed_at: new Date().toISOString() })
-    .eq("id", input.requestId);
+    .update({ status: parsed.data.status, reviewed_by: user.id, reviewed_at: new Date().toISOString() })
+    .eq("id", parsed.data.requestId);
   if (error) return { error: error.message };
   return {};
 }

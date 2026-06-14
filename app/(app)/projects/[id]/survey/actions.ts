@@ -8,6 +8,19 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ProjectStatus } from "@/lib/types";
+import { z } from "zod";
+
+const UUIDSchema = z.string().uuid();
+const StageSchema = z.enum(["lead", "survey", "drafting", "report", "review"]);
+
+const LogFileSchema = z.object({
+  projectId: z.string().uuid(),
+  stage: StageSchema,
+  filePath: z.string().min(1).max(1000),
+  fileName: z.string().min(1).max(500),
+  fileType: z.string().max(100),
+  remarks: z.string().max(1000).optional(),
+});
 
 export async function submitChecklist(input: {
   projectId: string;
@@ -18,10 +31,17 @@ export async function submitChecklist(input: {
   remarks: string | null;
 }): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+
+  if (!UUIDSchema.safeParse(input.projectId).success) return { error: "Invalid project ID" };
+  if (!UUIDSchema.safeParse(input.templateId).success) return { error: "Invalid template ID" };
+  if (!StageSchema.safeParse(input.stage).success) return { error: "Invalid stage" };
+
   const { error } = await supabase.from("checklist_responses").insert({
     project_id: input.projectId,
     template_id: input.templateId,
-    user_id: input.userId,
+    user_id: user.id,
     stage: input.stage,
     responses: input.responses,
     remarks: input.remarks,
@@ -32,6 +52,10 @@ export async function submitChecklist(input: {
 
 export async function advanceStage(projectId: string, newStatus: ProjectStatus): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
+  if (!StageSchema.safeParse(newStatus).success) return { error: "Invalid status" };
   const { error } = await supabase.from("projects").update({ status: newStatus }).eq("id", projectId);
   if (error) return { error: error.message };
   return {};
@@ -47,14 +71,20 @@ export async function logFileRecord(input: {
   remarks?: string;
 }): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+
+  const parsed = LogFileSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
   const { error } = await supabase.from("project_files").insert({
-    project_id: input.projectId,
-    user_id: input.userId,
-    stage: input.stage,
-    file_path: input.filePath,
-    file_name: input.fileName,
-    file_type: input.fileType,
-    remarks: input.remarks || null,
+    project_id: parsed.data.projectId,
+    user_id: user.id,
+    stage: parsed.data.stage,
+    file_path: parsed.data.filePath,
+    file_name: parsed.data.fileName,
+    file_type: parsed.data.fileType,
+    remarks: parsed.data.remarks || null,
   });
   if (error) return { error: error.message };
   return {};
