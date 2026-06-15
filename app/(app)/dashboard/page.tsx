@@ -52,6 +52,8 @@ export default async function DashboardPage() {
     }, {} as Record<ProjectStatus, number>);
 
     const total = projects.length;
+    const closedCases = counts["dispatch"] || 0;
+    const activeCases = total - closedCases;
 
     const STAGE_ORDER = PROJECT_STAGES.map((s) => s.value);
 
@@ -85,43 +87,69 @@ export default async function DashboardPage() {
     return (
       <div>
         <h1 className="text-xl font-semibold text-slate-800 mb-6">Dashboard</h1>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          {PROJECT_STAGES.map((stage) => (
+
+        {/* Summary header */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-[#1e3a5f]">{activeCases}</span>
+            <span className="text-sm text-slate-500">Active Cases</span>
+          </div>
+          <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-green-600">{closedCases}</span>
+            <span className="text-sm text-slate-500">Closed (Dispatched)</span>
+          </div>
+          <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-400">{total}</span>
+            <span className="text-sm text-slate-500">Total</span>
+          </div>
+        </div>
+
+        {/* Stage cards — excludes dispatch (shown in summary) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+          {PROJECT_STAGES.filter((s) => s.value !== "dispatch").map((stage) => (
             <Card key={stage.value} className="border-slate-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-slate-500 font-medium">{stage.label}</CardTitle>
+              <CardHeader className="pb-1 pt-3 px-3">
+                <CardTitle className="text-xs text-slate-500 font-medium leading-tight">{stage.label}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-2xl sm:text-3xl font-bold text-[#1e3a5f]">{counts[stage.value]}</p>
-                <p className="text-xs text-slate-400 mt-1">cases</p>
+              <CardContent className="px-3 pb-3">
+                <p className="text-2xl font-bold text-[#1e3a5f] leading-none">{counts[stage.value]}</p>
+                <p className="text-xs text-slate-400 mt-1">{activeCases > 0 ? `${counts[stage.value]}/${activeCases}` : "0/0"}</p>
               </CardContent>
             </Card>
           ))}
         </div>
+
         <Card className="border-slate-200 mb-8">
           <CardHeader>
             <CardTitle className="text-sm text-slate-600">Stage Distribution</CardTitle>
-            <p className="text-xs text-slate-400">Click a stage to see which projects are in it</p>
+            <p className="text-xs text-slate-400">Click a stage to see which cases are in it · counts shown as stage / total active</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
               {PROJECT_STAGES.map((stage) => {
-                const pct = total > 0 ? Math.round((counts[stage.value] / total) * 100) : 0;
+                const isDispatch = stage.value === "dispatch";
+                const denominator = isDispatch ? total : activeCases;
+                const pct = denominator > 0 ? Math.round((counts[stage.value] / denominator) * 100) : 0;
                 const stageProjects = projectsByStage[stage.value];
+                const barColor = isDispatch ? "bg-green-500" : "bg-[#1e3a5f]";
                 return (
                   <details key={stage.value} className="group">
                     <summary className="flex items-center gap-3 cursor-pointer list-none py-1.5 px-1 -mx-1 rounded-md hover:bg-slate-50 transition-colors [&::-webkit-details-marker]:hidden">
                       <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-open:rotate-90 shrink-0" />
-                      <span className="text-xs text-slate-500 w-16 shrink-0">{stage.label}</span>
+                      <span className={`text-xs w-24 shrink-0 ${isDispatch ? "text-green-600 font-medium" : "text-slate-500"}`}>{stage.label}</span>
                       <div className="flex-1 bg-slate-100 rounded-full h-2">
                         <div
-                          className="bg-[#1e3a5f] h-2 rounded-full transition-all"
+                          className={`${barColor} h-2 rounded-full transition-all`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-xs text-slate-400 w-8 text-right shrink-0">{counts[stage.value]}</span>
+                      <span className="text-xs text-slate-400 w-12 text-right shrink-0 tabular-nums">
+                        {counts[stage.value]}/{denominator}
+                      </span>
                     </summary>
-                    <div className="pl-[88px] pr-9 pt-1.5 pb-2">
+                    <div className="pl-[116px] pr-14 pt-1.5 pb-2">
                       {stageProjects.length === 0 ? (
                         <p className="text-xs text-slate-400">No cases in this stage.</p>
                       ) : (
