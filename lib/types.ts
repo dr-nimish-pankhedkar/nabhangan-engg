@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-export type UserRole = "admin" | "surveyor" | "draughtsman" | "report_staff";
+export type UserRole = "admin" | "staff" | "third_party";
 export type ProjectStatus = "lead" | "survey" | "rate_verification" | "drafting" | "checking" | "print" | "scan" | "dispatch";
 
 export interface Profile {
@@ -115,9 +115,8 @@ export const PROJECT_STAGES: { value: ProjectStatus; label: string }[] = [
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Admin",
-  surveyor: "Surveyor",
-  draughtsman: "Draughtsman",
-  report_staff: "Report Staff",
+  staff: "Staff",
+  third_party: "Third Party",
 };
 
 export const STATUS_COLORS: Record<ProjectStatus, string> = {

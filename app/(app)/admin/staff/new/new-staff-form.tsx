@@ -22,7 +22,7 @@ const schema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(6, "Minimum 6 characters (Supabase requirement)"),
   full_name: z.string().min(1, "Name required"),
-  role: z.enum(["admin", "surveyor", "draughtsman", "report_staff"]),
+  role: z.enum(["admin", "staff", "third_party"]),
   designation: z.string().optional(),
   employee_id: z.string().optional(),
   phone: z.string().optional(),
@@ -40,7 +40,7 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
   const [error, setError] = useState<string | null>(null);
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: "surveyor" },
+    defaultValues: { role: "staff" },
   });
 
   async function onSubmit(data: FormData) {
@@ -104,9 +104,8 @@ export default function NewStaffForm({ adminId }: { adminId: string }) {
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="surveyor">Surveyor</SelectItem>
-                      <SelectItem value="draughtsman">Draughtsman</SelectItem>
-                      <SelectItem value="report_staff">Report Staff</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="third_party">Third Party</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>

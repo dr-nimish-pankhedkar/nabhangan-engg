@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const schema = z.object({
   full_name: z.string().min(1),
-  role: z.enum(["admin", "surveyor", "draughtsman", "report_staff"]),
+  role: z.enum(["admin", "staff", "third_party"]),
   designation: z.string().optional(),
   employee_id: z.string().optional(),
   phone: z.string().optional(),
@@ -84,9 +84,8 @@ export default function EditStaffForm({ staff }: { staff: Profile }) {
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="surveyor">Surveyor</SelectItem>
-                      <SelectItem value="draughtsman">Draughtsman</SelectItem>
-                      <SelectItem value="report_staff">Report Staff</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="third_party">Third Party</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
