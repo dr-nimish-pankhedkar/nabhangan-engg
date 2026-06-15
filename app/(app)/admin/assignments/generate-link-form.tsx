@@ -29,6 +29,7 @@ export default function GenerateLinkForm({
   projects: { id: string; bank_name: string; status: string }[];
 }) {
   const [projectId, setProjectId] = useState("");
+  const [surveyorName, setSurveyorName] = useState("");
   const [expiryHours, setExpiryHours] = useState(24);
   const [customHours, setCustomHours] = useState("");
   const [useCustom, setUseCustom] = useState(false);
@@ -41,6 +42,7 @@ export default function GenerateLinkForm({
     setError(null);
     setGeneratedUrl(null);
     if (!projectId) { setError("Select a project first."); return; }
+    if (!surveyorName.trim()) { setError("Enter the surveyor's name."); return; }
 
     const hours = useCustom ? parseInt(customHours, 10) : expiryHours;
     if (!hours || hours < 1 || hours > 168) {
@@ -49,7 +51,11 @@ export default function GenerateLinkForm({
     }
 
     setGenerating(true);
-    const result = await generateThirdPartyToken({ project_id: projectId, expiry_hours: hours });
+    const result = await generateThirdPartyToken({
+      project_id: projectId,
+      expiry_hours: hours,
+      surveyor_name: surveyorName.trim(),
+    });
     setGenerating(false);
 
     if (result.error) { setError(result.error); return; }
@@ -82,6 +88,16 @@ export default function GenerateLinkForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-slate-600">Surveyor Name</label>
+          <Input
+            placeholder="e.g. Rajesh Patil"
+            value={surveyorName}
+            onChange={(e) => setSurveyorName(e.target.value)}
+            className="text-sm"
+          />
         </div>
 
         <div className="space-y-1">
@@ -156,7 +172,7 @@ export default function GenerateLinkForm({
               variant="outline"
               size="sm"
               className="text-xs"
-              onClick={() => { setGeneratedUrl(null); setProjectId(""); }}
+              onClick={() => { setGeneratedUrl(null); setProjectId(""); setSurveyorName(""); }}
             >
               Generate Another
             </Button>

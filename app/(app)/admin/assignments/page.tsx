@@ -6,7 +6,7 @@
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { STATUS_COLORS, ProjectStatus } from "@/lib/types";
 import { FEATURES } from "@/lib/features";
 import { Badge } from "@/components/ui/badge";
@@ -36,11 +36,13 @@ export default async function AssignmentsPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/dashboard");
 
-  const [projectsRes, staffRes, assignmentsRes, requestsRes] = await Promise.all([
+  const admin = await createAdminClient();
+  const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes] = await Promise.all([
     supabase.from("projects").select("id, bank_name, status").neq("status", "dispatch").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
+    admin.from("third_party_tokens").select("project_id, surveyor_name").is("used_at", null).gt("expires_at", new Date().toISOString()),
   ]);
 
   const projects = projectsRes.data || [];
@@ -54,6 +56,13 @@ export default async function AssignmentsPage() {
     if (!matrix[a.project_id]) matrix[a.project_id] = {};
     if (!matrix[a.project_id][a.user_id]) matrix[a.project_id][a.user_id] = [];
     matrix[a.project_id][a.user_id].push({ stage: a.stage, id: a.id });
+  });
+
+  // Build third-party map: tpMap[project_id] = [{surveyor_name}]
+  const tpMap: Record<string, { surveyor_name: string }[]> = {};
+  (tpTokensRes.data || []).forEach((t: any) => {
+    tpMap[t.project_id] = tpMap[t.project_id] || [];
+    tpMap[t.project_id].push({ surveyor_name: t.surveyor_name });
   });
 
   // Only show staff who appear in at least one column OR all active staff (to show availability)
@@ -91,13 +100,17 @@ export default async function AssignmentsPage() {
                     Status
                   </th>
                   {staff.map((s: any) => (
-                    <th key={s.id} className="text-center px-3 py-2.5 font-semibold text-slate-600 border-r border-slate-200 last:border-r-0 min-w-[120px]">
+                    <th key={s.id} className="text-center px-3 py-2.5 font-semibold text-slate-600 border-r border-slate-200 min-w-[120px]">
                       <div className="truncate max-w-[120px] mx-auto" title={s.full_name}>{s.full_name.split(" ")[0]}</div>
                       {s.designation && (
                         <div className="text-[10px] font-normal text-slate-400 truncate max-w-[120px] mx-auto">{s.designation}</div>
                       )}
                     </th>
                   ))}
+                  <th className="text-center px-3 py-2.5 font-semibold text-purple-600 border-slate-200 min-w-[140px]">
+                    <div>Third Party</div>
+                    <div className="text-[10px] font-normal text-purple-400">External surveyor</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -135,7 +148,7 @@ export default async function AssignmentsPage() {
                       {staff.map((s: any) => {
                         const cellItems = rowAssignments[s.id] || [];
                         return (
-                          <td key={s.id} className="px-2 py-2 border-r border-slate-100 last:border-r-0 align-top">
+                          <td key={s.id} className="px-2 py-2 border-r border-slate-100 align-top">
                             {cellItems.length === 0 ? (
                               <span className="text-slate-200 text-[10px] select-none">—</span>
                             ) : (
@@ -153,6 +166,20 @@ export default async function AssignmentsPage() {
                           </td>
                         );
                       })}
+                      {/* Third Party cell */}
+                      <td className="px-2 py-2 align-top">
+                        {(tpMap[p.id] || []).length === 0 ? (
+                          <span className="text-slate-200 text-[10px] select-none">—</span>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {(tpMap[p.id] || []).map((tp, i) => (
+                              <Badge key={i} className="text-[10px] px-1.5 py-0 font-medium bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-100">
+                                Survey — {tp.surveyor_name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

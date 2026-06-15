@@ -6,7 +6,7 @@
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS, ROLE_LABELS, UserRole } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,8 @@ export default async function DashboardPage() {
   const { salutation, emoji, tagline } = getGreeting();
 
   if (profile.role === "admin") {
-    const [projectsRes, staffRes, assignmentsRes] = await Promise.all([
+    const adminClient = await createAdminClient();
+    const [projectsRes, staffRes, assignmentsRes, tpTokensRes] = await Promise.all([
       supabase.from("projects").select("id, bank_name, status"),
       supabase.from("profiles").select("id, full_name, role, designation, is_active").eq("is_active", true).order("full_name"),
       supabase
@@ -50,11 +51,25 @@ export default async function DashboardPage() {
         .select("user_id, stage, projects(bank_name, status)")
         .neq("stage", "lead")
         .neq("stage", "dispatch"),
+      adminClient
+        .from("third_party_tokens")
+        .select("surveyor_name, project_id, projects(bank_name)")
+        .is("used_at", null)
+        .gt("expires_at", new Date().toISOString()),
     ]);
 
     const projects = projectsRes.data || [];
     const staff = staffRes.data || [];
     const allAssignments = assignmentsRes.data || [];
+
+    // Group third-party tokens by surveyor_name
+    const tpGroupMap: Record<string, { count: number; projects: { id: string; bank_name: string }[] }> = {};
+    (tpTokensRes.data || []).forEach((t: any) => {
+      if (!tpGroupMap[t.surveyor_name]) tpGroupMap[t.surveyor_name] = { count: 0, projects: [] };
+      tpGroupMap[t.surveyor_name].count++;
+      if (t.projects) tpGroupMap[t.surveyor_name].projects.push({ id: t.project_id, bank_name: (t.projects as any).bank_name });
+    });
+    const thirdPartyGroups = Object.entries(tpGroupMap).map(([name, data]) => ({ name, ...data }));
 
     const projectsByStage = PROJECT_STAGES.reduce((acc, s) => {
       acc[s.value] = projects.filter((p: any) => p.status === s.value);
@@ -255,7 +270,7 @@ export default async function DashboardPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
                   {staff.map((s: any) => {
                     const active = activeAssignmentsByUser[s.id] || [];
                     const load = active.length;
@@ -327,6 +342,35 @@ export default async function DashboardPage() {
                     );
                   })}
                 </div>
+
+                {thirdPartyGroups.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-slate-500 mb-3 mt-2">Third-Party Surveyors (active links)</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      {thirdPartyGroups.map((tp) => (
+                        <div key={tp.name} className="rounded-lg border border-purple-100 bg-purple-50/40 p-3 flex items-start gap-3">
+                          <div className="relative shrink-0 w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold text-purple-700">{tp.count}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <p className="text-sm font-medium text-slate-800 leading-tight truncate">{tp.name}</p>
+                              <Badge className="shrink-0 bg-purple-100 text-purple-700 hover:bg-purple-100">External</Badge>
+                            </div>
+                            <p className="text-xs text-purple-400 leading-tight mt-0.5">Third Party Surveyor</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {tp.projects.map((proj) => (
+                                <Badge key={proj.id} variant="outline" className="text-xs font-normal text-purple-700 border-purple-200">
+                                  {proj.bank_name} · survey
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </>
             )}
           </CardContent>

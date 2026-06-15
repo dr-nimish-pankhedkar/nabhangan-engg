@@ -6,7 +6,7 @@
 
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,6 +88,23 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const submissions = submissionsRes.data || [];
   const submissionsMap: Record<string, any> = {};
   submissions.forEach((s: any) => { submissionsMap[s.stage] = s; });
+
+  // Fetch active third-party survey token for this project (admin only)
+  let surveyThirdPartyName: string | null = null;
+  if (isAdmin) {
+    const adminClient = await createAdminClient();
+    const { data: tpToken } = await adminClient
+      .from("third_party_tokens")
+      .select("surveyor_name")
+      .eq("project_id", id)
+      .eq("stage", "survey")
+      .is("used_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    surveyThirdPartyName = tpToken?.surveyor_name ?? null;
+  }
 
   const nextStageIdx = currentStageIdx + 1;
   const nextStage = nextStageIdx < STAGE_ORDER.length ? STAGE_ORDER[nextStageIdx] : null;
@@ -259,7 +276,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
                     <Badge className={STATUS_COLORS[stage.value]}>{stage.label}</Badge>
-                    {stageAssignees.length > 0 ? (
+                    {stageAssignees.length > 0 || (stage.value === "survey" && surveyThirdPartyName) ? (
                       <span className="text-xs text-slate-500 font-normal flex items-center gap-1 flex-wrap">
                         Assigned to:
                         {stageAssignees.map((a: any) => (
@@ -267,6 +284,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                             {a.profiles?.full_name}
                           </Badge>
                         ))}
+                        {stage.value === "survey" && surveyThirdPartyName && (
+                          <Badge variant="outline" className="text-xs font-normal text-purple-700 border-purple-300 bg-purple-50">
+                            Third Party — {surveyThirdPartyName}
+                          </Badge>
+                        )}
                       </span>
                     ) : (
                       <span className="text-xs text-slate-400 font-normal">No one assigned yet</span>

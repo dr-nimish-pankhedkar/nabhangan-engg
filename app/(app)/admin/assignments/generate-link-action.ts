@@ -12,11 +12,13 @@ import { z } from "zod";
 const Schema = z.object({
   project_id: z.string().uuid(),
   expiry_hours: z.number().int().min(1).max(168),
+  surveyor_name: z.string().min(1).max(200),
 });
 
 export async function generateThirdPartyToken(input: {
   project_id: string;
   expiry_hours: number;
+  surveyor_name: string;
 }): Promise<{ error?: string; token?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,6 +40,7 @@ export async function generateThirdPartyToken(input: {
     .insert({
       project_id: parsed.data.project_id,
       stage: "survey",
+      surveyor_name: parsed.data.surveyor_name,
       expires_at,
       created_by: user.id,
     })
