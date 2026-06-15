@@ -13,6 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 
+function getGreeting() {
+  // Convert server UTC time to IST (UTC+5:30)
+  const now = new Date();
+  const istMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + 330;
+  const istHour = Math.floor((istMinutes % 1440) / 60);
+
+  if (istHour >= 5 && istHour < 12) return { salutation: "Good Morning", emoji: "☀️", tagline: "A fresh start — let's move some cases forward today." };
+  if (istHour >= 12 && istHour < 17) return { salutation: "Good Afternoon", emoji: "🌤️", tagline: "Keep the momentum going — every step counts." };
+  if (istHour >= 17 && istHour < 21) return { salutation: "Good Evening", emoji: "🌆", tagline: "Great work today. Let's wrap up strong." };
+  return { salutation: "Good Night", emoji: "🌙", tagline: "Working late? Your dedication makes all the difference." };
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -25,6 +37,9 @@ export default async function DashboardPage() {
     .single();
 
   if (!profile) redirect("/login");
+
+  const firstName = profile.full_name?.split(" ")[0] || "there";
+  const { salutation, emoji, tagline } = getGreeting();
 
   if (profile.role === "admin") {
     const [projectsRes, staffRes, assignmentsRes] = await Promise.all([
@@ -86,7 +101,10 @@ export default async function DashboardPage() {
 
     return (
       <div>
-        <h1 className="text-xl font-semibold text-slate-800 mb-6">Dashboard</h1>
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-slate-800">{emoji} {salutation}, {firstName}!</h1>
+          <p className="text-sm text-slate-400 mt-0.5">{tagline}</p>
+        </div>
 
         {/* Summary header */}
         <div className="flex flex-wrap gap-4 mb-6 p-4 rounded-xl bg-slate-50 border border-slate-100">
@@ -335,7 +353,10 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-800 mb-6">Dashboard</h1>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-slate-800">{emoji} {salutation}, {firstName}!</h1>
+        <p className="text-sm text-slate-400 mt-0.5">{tagline}</p>
+      </div>
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
