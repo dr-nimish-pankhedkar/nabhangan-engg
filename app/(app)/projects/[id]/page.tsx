@@ -11,13 +11,14 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, PartyPopper, AlertTriangle, Pencil, LockKeyhole, RotateCcw } from "lucide-react";
+import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, PartyPopper, AlertTriangle, Pencil, LockKeyhole, RotateCcw, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StartSurveyButton from "./start-survey-button";
 import AdvanceStageButton from "./advance-stage-button";
 import DocumentsPendingToggle from "./documents-pending-toggle";
 import ApproveCaseButton from "./approve-case-button";
 import RevokeStageButton from "./revoke-stage-button";
+import FileManager from "./file-manager";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -73,7 +74,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     supabase.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by").eq("project_id", id),
   ]);
 
-  const files = filesRes.data || [];
+  const rawFiles = filesRes.data || [];
+  const files = await Promise.all(
+    rawFiles.map(async (f: any) => {
+      const { data } = await supabase.storage.from("project-files").createSignedUrl(f.file_path, 3600);
+      return { ...f, signedUrl: data?.signedUrl || null };
+    })
+  );
   const responses = responsesRes.data || [];
   const timelogs = timelogsRes.data || [];
   const assignments = assignmentsRes.data || [];
@@ -285,10 +292,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               {hasContent && (
                 <CardContent className="px-4 pb-4 pt-0 space-y-2">
                   {stageFiles.map((f: any) => (
-                    <div key={f.id} className="text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
-                      <span className="font-medium">File:</span> {f.file_name}
-                      {f.remarks && <span className="text-slate-400 ml-2">— {f.remarks}</span>}
-                      <span className="text-slate-400 ml-2">by {f.profiles?.full_name}</span>
+                    <div key={f.id} className="flex items-center justify-between gap-2 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
+                      <div className="min-w-0">
+                        <span className="font-medium">File:</span> {f.file_name}
+                        {f.remarks && <span className="text-slate-400 ml-2">— {f.remarks}</span>}
+                        <span className="text-slate-400 ml-2">by {f.profiles?.full_name}</span>
+                      </div>
+                      {f.signedUrl && (
+                        <a href={f.signedUrl} download={f.file_name} target="_blank" rel="noopener noreferrer"
+                          className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-[#1e3a5f] hover:underline">
+                          <Download className="h-3 w-3" />
+                          Download
+                        </a>
+                      )}
                     </div>
                   ))}
                   {stageResponses.map((r: any) => (
@@ -311,6 +327,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           );
         })}
       </div>
+
+      {/* File Management — admin only, closed cases only */}
+      {isAdmin && isComplete && files.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold text-slate-600 mb-1">File Management</h2>
+          <p className="text-xs text-slate-400 mb-3">Case is closed. Select files to permanently delete from storage.</p>
+          <Card className="border-slate-200">
+            <CardContent className="pt-4 pb-4">
+              <FileManager files={files.map((f: any) => ({ id: f.id, file_name: f.file_name, stage: f.stage, uploaded_at: f.uploaded_at }))} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

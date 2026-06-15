@@ -115,6 +115,21 @@ export async function approveCase(projectId: string): Promise<{ error?: string }
   return {};
 }
 
+export async function deleteProjectFiles(fileIds: string[]): Promise<{ error?: string }> {
+  const { supabase, error } = await requireAdmin();
+  if (error) return { error };
+  if (!Array.isArray(fileIds) || fileIds.length === 0) return {};
+  const validIds = fileIds.filter((id) => ProjectIdSchema.safeParse(id).success);
+  if (validIds.length === 0) return {};
+  const { data: files } = await supabase.from("project_files").select("id, file_path").in("id", validIds);
+  if (files && files.length > 0) {
+    await supabase.storage.from("project-files").remove(files.map((f: any) => f.file_path));
+  }
+  const { error: dbError } = await supabase.from("project_files").delete().in("id", validIds);
+  if (dbError) return { error: dbError.message };
+  return {};
+}
+
 export async function revokeStageSubmission(projectId: string, stage: string): Promise<{ error?: string }> {
   const { supabase, user, error } = await requireAdmin();
   if (error) return { error };

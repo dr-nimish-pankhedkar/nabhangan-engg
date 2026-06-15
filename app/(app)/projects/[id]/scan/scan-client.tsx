@@ -19,13 +19,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Upload, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ReferenceFiles, { type RefFile } from "../reference-files";
 
 const timeSchema = z.object({
   hours_spent: z.string().min(1).refine((v) => parseFloat(v) > 0, "Must be > 0"),
   notes: z.string().optional(),
 });
 
-export default function ScanClient({ projectId, userId, isLocked }: { projectId: string; userId: string; isLocked: boolean }) {
+export default function ScanClient({ projectId, userId, isLocked, refFiles }: { projectId: string; userId: string; isLocked: boolean; refFiles: RefFile[] }) {
   const router = useRouter();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
@@ -80,6 +81,7 @@ export default function ScanClient({ projectId, userId, isLocked }: { projectId:
 
   return (
     <div className="space-y-6">
+      <ReferenceFiles files={refFiles} />
       <Card className="border-slate-200">
         <CardHeader className="pb-3"><CardTitle className="text-sm">Upload Scanned File</CardTitle></CardHeader>
         <CardContent className="space-y-3">

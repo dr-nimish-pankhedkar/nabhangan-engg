@@ -17,13 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { CheckCircle, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ReferenceFiles, { type RefFile } from "../reference-files";
 
 const timeSchema = z.object({
   hours_spent: z.string().min(1).refine((v) => parseFloat(v) > 0, "Must be > 0"),
   notes: z.string().optional(),
 });
 
-export default function PrintClient({ projectId, userId, isLocked }: { projectId: string; userId: string; isLocked: boolean }) {
+export default function PrintClient({ projectId, userId, isLocked, refFiles }: { projectId: string; userId: string; isLocked: boolean; refFiles: RefFile[] }) {
   const router = useRouter();
   const [timeLogged, setTimeLogged] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export default function PrintClient({ projectId, userId, isLocked }: { projectId
 
   return (
     <div className="space-y-6">
+      <ReferenceFiles files={refFiles} />
       <Card className="border-slate-200">
         <CardHeader className="pb-3"><CardTitle className="text-sm">Log Time</CardTitle></CardHeader>
         <CardContent>
