@@ -332,6 +332,86 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         })}
       </div>
 
+      {/* Project Timeline — admin only */}
+      {isAdmin && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-600">Project Timeline</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Hours, staff, and submission timestamps per stage</p>
+            </div>
+            <a href={`/projects/${id}/timeline`}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                <Download className="h-3.5 w-3.5" /> Download CSV
+              </Button>
+            </a>
+          </div>
+          <Card className="border-slate-200">
+            <CardContent className="pt-0 pb-0 overflow-x-auto">
+              <table className="w-full text-xs min-w-[540px]">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left py-2.5 px-3 text-slate-400 font-medium">Stage</th>
+                    <th className="text-left py-2.5 px-3 text-slate-400 font-medium">Assigned To</th>
+                    <th className="text-right py-2.5 px-3 text-slate-400 font-medium">Hours</th>
+                    <th className="text-left py-2.5 px-3 text-slate-400 font-medium">Submitted At</th>
+                    <th className="text-right py-2.5 px-3 text-slate-400 font-medium">Files</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const hoursPerStage: Record<string, number> = {};
+                    timelogs.forEach((t: any) => { hoursPerStage[t.stage] = (hoursPerStage[t.stage] || 0) + Number(t.hours_spent); });
+                    const filesPerStage: Record<string, number> = {};
+                    files.forEach((f: any) => { filesPerStage[f.stage] = (filesPerStage[f.stage] || 0) + 1; });
+                    const assignedPerStage: Record<string, string> = {};
+                    assignments.forEach((a: any) => { assignedPerStage[a.stage] = (a as any).profiles?.full_name || ""; });
+                    const totalHours = Object.values(hoursPerStage).reduce((a, b) => a + b, 0);
+
+                    return (
+                      <>
+                        {PROJECT_STAGES.map((stage) => {
+                          const sub = submissionsMap[stage.value];
+                          const isCurrent = stage.value === project.status;
+                          const isSubmitted = sub && !sub.revoked_by;
+                          return (
+                            <tr key={stage.value} className={cn("border-b border-slate-50 last:border-0", isCurrent && "bg-blue-50/40")}>
+                              <td className="py-2.5 px-3 font-medium text-slate-700 whitespace-nowrap">
+                                {stage.label}
+                                {isCurrent && <span className="ml-1.5 text-[10px] text-blue-600 bg-blue-100 rounded px-1 py-0.5 font-normal">active</span>}
+                                {isSubmitted && <span className="ml-1.5 text-[10px] text-green-600 bg-green-100 rounded px-1 py-0.5 font-normal">done</span>}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-600">{assignedPerStage[stage.value] || <span className="text-slate-300">—</span>}</td>
+                              <td className="py-2.5 px-3 text-right text-slate-600 tabular-nums">
+                                {hoursPerStage[stage.value] ? `${hoursPerStage[stage.value].toFixed(1)}h` : <span className="text-slate-300">—</span>}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
+                                {sub?.submitted_at
+                                  ? new Date(sub.submitted_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                                  : <span className="text-slate-300">—</span>}
+                                {sub?.revoked_by && <span className="text-amber-500 ml-1">(revoked)</span>}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-slate-500 tabular-nums">
+                                {filesPerStage[stage.value] || <span className="text-slate-300">—</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="bg-slate-50">
+                          <td colSpan={2} className="py-2 px-3 text-xs font-semibold text-slate-600">Total</td>
+                          <td className="py-2 px-3 text-right text-xs font-semibold text-slate-700 tabular-nums">{totalHours > 0 ? `${totalHours.toFixed(1)}h` : "—"}</td>
+                          <td colSpan={2} />
+                        </tr>
+                      </>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* File Management — admin only, closed cases only */}
       {isAdmin && isComplete && files.length > 0 && (
         <div className="mt-8">

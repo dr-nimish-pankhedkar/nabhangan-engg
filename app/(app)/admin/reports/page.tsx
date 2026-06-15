@@ -122,7 +122,14 @@ export default async function ReportsPage({
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-xl font-semibold text-slate-800 mb-6">Staff Reports</h1>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <h1 className="text-xl font-semibold text-slate-800">Staff Reports</h1>
+        <a href="/admin/reports/download">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+            ⬇ Download All Projects Report (CSV)
+          </button>
+        </a>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Staff selector */}
