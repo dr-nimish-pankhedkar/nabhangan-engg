@@ -133,9 +133,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Stage tiles — survey through dispatch */}
+        {/* Stage tiles — all 8 stages */}
         {(() => {
           const STAGE_EMOJI: Record<string, string> = {
+            lead: "💡",
             survey: "📍",
             rate_verification: "📊",
             drafting: "✏️",
@@ -144,9 +145,9 @@ export default async function DashboardPage() {
             scan: "📷",
             dispatch: "📬",
           };
-          const visibleStages = PROJECT_STAGES.filter((s) => s.value !== "lead");
+          const visibleStages = PROJECT_STAGES;
           return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
               {visibleStages.map((stage) => {
                 const isDispatch = stage.value === "dispatch";
                 const count = counts[stage.value];
@@ -179,7 +180,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {PROJECT_STAGES.filter((s) => s.value !== "lead").map((stage) => {
+              {PROJECT_STAGES.map((stage) => {
                 const isDispatch = stage.value === "dispatch";
                 const denominator = isDispatch ? total : activeCases;
                 const pct = denominator > 0 ? Math.round((counts[stage.value] / denominator) * 100) : 0;
