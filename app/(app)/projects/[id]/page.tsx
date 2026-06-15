@@ -78,7 +78,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const rawFiles = filesRes.data || [];
   const files = await Promise.all(
     rawFiles.map(async (f: any) => {
-      const { data } = await supabase.storage.from("project-files").createSignedUrl(f.file_path, 3600);
+      const { data } = await supabase.storage.from("project-files").createSignedUrl(f.file_path, 604800);
       return { ...f, signedUrl: data?.signedUrl || null };
     })
   );

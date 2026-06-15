@@ -49,7 +49,7 @@ export default async function PrintPage({ params }: { params: Promise<{ id: stri
 
   const refFiles = await Promise.all(
     (prevFilesRes.data || []).map(async (f: any) => {
-      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(f.file_path, 3600);
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(f.file_path, 604800);
       return { ...f, signedUrl: data?.signedUrl || null };
     })
   );

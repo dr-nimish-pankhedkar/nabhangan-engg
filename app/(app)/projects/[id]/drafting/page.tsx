@@ -49,7 +49,7 @@ export default async function DraftingPage({ params }: { params: Promise<{ id: s
 
   const photosWithUrls = await Promise.all(
     (surveyPhotosRes.data || []).map(async (photo: any) => {
-      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(photo.file_path, 3600);
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(photo.file_path, 604800);
       return { ...photo, signedUrl: data?.signedUrl || null };
     })
   );
