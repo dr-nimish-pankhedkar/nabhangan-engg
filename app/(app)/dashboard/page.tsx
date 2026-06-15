@@ -89,37 +89,71 @@ export default async function DashboardPage() {
         <h1 className="text-xl font-semibold text-slate-800 mb-6">Dashboard</h1>
 
         {/* Summary header */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#1e3a5f]">{activeCases}</span>
-            <span className="text-sm text-slate-500">Active Cases</span>
+        <div className="flex flex-wrap gap-4 mb-6 p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🏗️</span>
+            <div>
+              <p className="text-2xl font-bold text-[#1e3a5f] leading-none">{activeCases}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Active Cases</p>
+            </div>
           </div>
           <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-green-600">{closedCases}</span>
-            <span className="text-sm text-slate-500">Closed (Dispatched)</span>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <p className="text-2xl font-bold text-green-600 leading-none">{closedCases}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Closed (Dispatched)</p>
+            </div>
           </div>
           <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-400">{total}</span>
-            <span className="text-sm text-slate-500">Total</span>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📁</span>
+            <div>
+              <p className="text-2xl font-bold text-slate-400 leading-none">{total}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Total</p>
+            </div>
           </div>
         </div>
 
-        {/* Stage cards — excludes dispatch (shown in summary) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
-          {PROJECT_STAGES.filter((s) => s.value !== "dispatch").map((stage) => (
-            <Card key={stage.value} className="border-slate-200">
-              <CardHeader className="pb-1 pt-3 px-3">
-                <CardTitle className="text-xs text-slate-500 font-medium leading-tight">{stage.label}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
-                <p className="text-2xl font-bold text-[#1e3a5f] leading-none">{counts[stage.value]}</p>
-                <p className="text-xs text-slate-400 mt-1">{activeCases > 0 ? `${counts[stage.value]}/${activeCases}` : "0/0"}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Stage tiles — all 8 stages */}
+        {(() => {
+          const STAGE_EMOJI: Record<string, string> = {
+            lead: "💡",
+            survey: "📍",
+            rate_verification: "📊",
+            drafting: "✏️",
+            checking: "🔍",
+            print: "🖨️",
+            scan: "📷",
+            dispatch: "📬",
+          };
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
+              {PROJECT_STAGES.map((stage) => {
+                const isDispatch = stage.value === "dispatch";
+                const denominator = isDispatch ? total : activeCases;
+                const count = counts[stage.value];
+                return (
+                  <Card key={stage.value} className={cn(
+                    "border transition-colors",
+                    isDispatch ? "border-green-200 bg-green-50/60" : "border-slate-200 hover:border-slate-300"
+                  )}>
+                    <CardContent className="px-3 pb-3 pt-3">
+                      <div className="text-lg mb-1 leading-none">{STAGE_EMOJI[stage.value]}</div>
+                      <p className="text-[11px] text-slate-500 font-medium leading-tight">{stage.label}</p>
+                      <p className={cn("text-2xl font-bold leading-none mt-1.5", isDispatch ? "text-green-600" : "text-[#1e3a5f]")}>
+                        {count}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1 tabular-nums">
+                        {denominator > 0 ? `${count}/${denominator}` : "0/0"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         <Card className="border-slate-200 mb-8">
           <CardHeader>
