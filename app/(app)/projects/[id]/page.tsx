@@ -11,7 +11,7 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, FileText, ShieldCheck, PartyPopper, AlertTriangle, Pencil } from "lucide-react";
+import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, PartyPopper, AlertTriangle, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StartSurveyButton from "./start-survey-button";
 import AdvanceStageButton from "./advance-stage-button";
@@ -21,19 +21,25 @@ import ApproveCaseButton from "./approve-case-button";
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
   survey: "survey",
+  rate_verification: "rate-verification",
   drafting: "drafting",
-  report: "report",
-  review: "review",
+  checking: "checking",
+  print: "print",
+  scan: "scan",
+  dispatch: "dispatch",
 };
 
-const STAGE_ORDER: ProjectStatus[] = ["lead", "survey", "drafting", "report", "review"];
+const STAGE_ORDER: ProjectStatus[] = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
 
 const STAGE_ICONS: Record<ProjectStatus, React.ElementType> = {
   lead: Lightbulb,
   survey: MapPinned,
+  rate_verification: Calculator,
   drafting: PenTool,
-  report: FileText,
-  review: ShieldCheck,
+  checking: ClipboardCheck,
+  print: Printer,
+  scan: ScanLine,
+  dispatch: Send,
 };
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,7 +62,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const isAdmin = profile?.role === "admin";
   const currentStageIdx = STAGE_ORDER.indexOf(project.status);
   const progressPct = Math.round((currentStageIdx / (STAGE_ORDER.length - 1)) * 100);
-  const isComplete = project.status === "review";
+  const isComplete = project.status === "dispatch";
 
   const [filesRes, responsesRes, timelogsRes, assignmentsRes] = await Promise.all([
     supabase.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
@@ -152,8 +158,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <div className="flex items-center gap-3 mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
           <PartyPopper className="h-5 w-5 text-green-600 shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-green-700">Case reached final stage — Review</p>
-            <p className="text-xs text-green-600/80">All milestones completed. This case is ready for sign-off.</p>
+            <p className="text-sm font-semibold text-green-700">Case Dispatched — Complete</p>
+            <p className="text-xs text-green-600/80">All stages completed. This case has been dispatched.</p>
           </div>
         </div>
       )}
@@ -178,7 +184,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           const route = STAGE_ROUTES[stage.value];
           const href = route ? `/projects/${id}/${route}` : null;
           const StageIcon = STAGE_ICONS[stage.value];
-          const isFinalActive = active && stage.value === "review";
+          const isFinalActive = active && stage.value === "dispatch";
 
           const node = (
             <div className={`relative w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-colors ${

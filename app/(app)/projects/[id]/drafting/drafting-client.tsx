@@ -81,7 +81,7 @@ export default function DraftingClient({
   }
 
   async function handleAdvance() {
-    const result = await advanceStage(projectId, "report");
+    const result = await advanceStage(projectId, "checking");
     if (result.error) setError(result.error);
     else router.push(`/projects/${projectId}`);
   }
@@ -241,7 +241,7 @@ export default function DraftingClient({
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <Button onClick={handleAdvance} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
-        Mark Drafting Complete → Report
+        Mark Drafting Complete → Checking
       </Button>
     </div>
   );

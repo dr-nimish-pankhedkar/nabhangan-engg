@@ -19,7 +19,7 @@ const ChecklistFieldSchema = z.object({
 
 const CreateTemplateSchema = z.object({
   name: z.string().min(1).max(200),
-  stage: z.enum(["lead", "survey", "drafting", "report", "review"]),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]),
   fields: z.array(ChecklistFieldSchema).min(1),
 });
 

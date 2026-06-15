@@ -11,7 +11,7 @@ import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
 const UUIDSchema = z.string().uuid();
-const StageSchema = z.enum(["lead", "survey", "drafting", "report", "review"]);
+const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]);
 
 const LogFileSchema = z.object({
   projectId: z.string().uuid(),
@@ -116,7 +116,7 @@ export async function submitSiteVisitReport(input: {
 }): Promise<{ error?: string }> {
   const saveResult = await saveSiteVisitReport(input);
   if (saveResult.error) return saveResult;
-  return advanceStage(input.projectId, "drafting");
+  return advanceStage(input.projectId, "rate_verification");
 }
 
 const UpdateCaseSchema = z.object({

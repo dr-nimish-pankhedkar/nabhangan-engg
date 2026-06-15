@@ -29,9 +29,12 @@ interface StaffMember {
 
 const ASSIGNABLE_STAGES = [
   { value: "survey", label: "Survey" },
-  { value: "drafting", label: "Drafting" },
-  { value: "report", label: "Report" },
-  { value: "review", label: "Review" },
+  { value: "rate_verification", label: "Rate Verification" },
+  { value: "drafting", label: "Drafting Report" },
+  { value: "checking", label: "Checking" },
+  { value: "print", label: "Print" },
+  { value: "scan", label: "Scan" },
+  { value: "dispatch", label: "Dispatch" },
 ];
 
 const schema = z.object({

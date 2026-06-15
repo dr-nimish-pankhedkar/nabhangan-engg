@@ -13,7 +13,7 @@ import { z } from "zod";
 const CreateAssignmentSchema = z.object({
   project_id: z.string().uuid(),
   user_id: z.string().uuid(),
-  stage: z.enum(["lead", "survey", "drafting", "report", "review"]),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]),
 });
 
 const ReviewRequestSchema = z.object({

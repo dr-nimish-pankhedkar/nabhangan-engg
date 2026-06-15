@@ -43,7 +43,7 @@ export default async function MyTasksPage() {
           <div className="space-y-2">
             {assignments.map((a: any) => {
               const stage = a.stage as ProjectStatus;
-              const routes: Record<string, string> = { survey: "survey", drafting: "drafting", report: "report", review: "review" };
+              const routes: Record<string, string> = { survey: "survey", rate_verification: "rate-verification", drafting: "drafting", checking: "checking", print: "print", scan: "scan", dispatch: "dispatch" };
               const route = routes[stage];
               return (
                 <Card key={a.id} className="border-slate-200">

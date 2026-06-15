@@ -11,7 +11,7 @@ import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
 const UUIDSchema = z.string().uuid();
-const StageSchema = z.enum(["lead", "survey", "drafting", "report", "review"]);
+const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]);
 
 const LogFileSchema = z.object({
   projectId: z.string().uuid(),
@@ -39,10 +39,8 @@ export async function logFileRecord(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
   const parsed = LogFileSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-
   const { error } = await supabase.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
@@ -65,10 +63,8 @@ export async function logTime(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
   const parsed = LogTimeSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-
   const { error } = await supabase.from("time_logs").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
@@ -80,12 +76,13 @@ export async function logTime(input: {
   return {};
 }
 
-export async function submitForReview(projectId: string): Promise<{ error?: string }> {
+export async function advanceStage(projectId: string, newStatus: ProjectStatus): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
   if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
-  const { error } = await supabase.from("projects").update({ status: "review" }).eq("id", projectId);
+  if (!StageSchema.safeParse(newStatus).success) return { error: "Invalid status" };
+  const { error } = await supabase.from("projects").update({ status: newStatus }).eq("id", projectId);
   if (error) return { error: error.message };
   return {};
 }

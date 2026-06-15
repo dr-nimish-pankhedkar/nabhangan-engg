@@ -39,10 +39,8 @@ export async function logFileRecord(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
   const parsed = LogFileSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-
   const { error } = await supabase.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
@@ -65,10 +63,8 @@ export async function logTime(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
   const parsed = LogTimeSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-
   const { error } = await supabase.from("time_logs").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,

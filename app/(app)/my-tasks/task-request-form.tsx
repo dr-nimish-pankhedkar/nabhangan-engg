@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const schema = z.object({
   project_id: z.string().optional(),
-  stage: z.enum(["lead", "survey", "drafting", "report", "review"]).optional(),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]).optional(),
   message: z.string().min(5, "Please describe the task you want"),
 });
 

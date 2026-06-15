@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const AssignmentSchema = z.object({
-  stage: z.enum(["lead", "survey", "drafting", "report", "review"]),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]),
   user_id: z.string().uuid(),
 });
 

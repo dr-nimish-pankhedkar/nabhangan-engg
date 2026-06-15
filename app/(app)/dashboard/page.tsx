@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         .from("project_assignments")
         .select("user_id, stage, projects(bank_name, status)")
         .neq("stage", "lead")
-        .neq("stage", "review"),
+        .neq("stage", "dispatch"),
     ]);
 
     const projects = projectsRes.data || [];
@@ -316,7 +316,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-2">
             {assignments.slice(0, 5).map((a: any) => {
-              const routes: Record<string, string> = { survey: "survey", drafting: "drafting", report: "report", review: "review" };
+              const routes: Record<string, string> = { survey: "survey", rate_verification: "rate-verification", drafting: "drafting", checking: "checking", print: "print", scan: "scan", dispatch: "dispatch" };
               const route = routes[a.stage];
               return (
                 <Link key={a.id} href={route ? `/projects/${a.projects?.id}/${route}` : `/projects/${a.projects?.id}`}>

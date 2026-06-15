@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { uploadProjectFile } from "@/lib/storage";
-import { logFileRecord, logTime, submitForReview } from "./actions";
+import { logFileRecord, logTime, advanceStage } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ const timeSchema = z.object({
   notes: z.string().optional(),
 });
 
-export default function ReportClient({ projectId, userId }: { projectId: string; userId: string }) {
+export default function RateVerificationClient({ projectId, userId }: { projectId: string; userId: string }) {
   const router = useRouter();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
@@ -42,9 +42,9 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
     setUploadProgress(10);
     try {
       setUploadProgress(40);
-      const url = await uploadProjectFile(projectId, "report", file);
+      const url = await uploadProjectFile(projectId, "rate_verification", file);
       setUploadProgress(80);
-      await logFileRecord({ projectId, userId, stage: "report", filePath: url, fileName: file.name, fileType: file.type });
+      await logFileRecord({ projectId, userId, stage: "rate_verification", filePath: url, fileName: file.name, fileType: file.type });
       setUploadProgress(100);
       setUploadedFile(file.name);
     } catch (err: any) {
@@ -55,13 +55,13 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
   }
 
   async function onTimeSubmit(data: any) {
-    const result = await logTime({ projectId, userId, stage: "report", hours_spent: parseFloat(data.hours_spent), notes: data.notes || null });
+    const result = await logTime({ projectId, userId, stage: "rate_verification", hours_spent: parseFloat(data.hours_spent), notes: data.notes || null });
     if (result.error) setError(result.error);
     else setTimeLogged(true);
   }
 
-  async function handleSubmitForReview() {
-    const result = await submitForReview(projectId);
+  async function handleAdvance() {
+    const result = await advanceStage(projectId, "drafting");
     if (result.error) setError(result.error);
     else router.push(`/projects/${projectId}`);
   }
@@ -69,9 +69,9 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
   return (
     <div className="space-y-6">
       <Card className="border-slate-200">
-        <CardHeader className="pb-3"><CardTitle className="text-sm">Upload Report File</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-sm">Upload Rate Sheet (Excel)</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <input ref={fileRef} type="file" className="hidden" onChange={handleFileUpload} />
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv,.ods" className="hidden" onChange={handleFileUpload} />
           <Button variant="outline" className="w-full sm:w-auto gap-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
             <Upload className="h-4 w-4" />{uploading ? "Uploading…" : "Choose File"}
           </Button>
@@ -89,18 +89,10 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onTimeSubmit)} className="space-y-4">
                 <FormField control={form.control} name="hours_spent" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hours Spent</FormLabel>
-                    <FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Hours Spent</FormLabel><FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="notes" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Notes</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
               </form>
@@ -111,8 +103,8 @@ export default function ReportClient({ projectId, userId }: { projectId: string;
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      <Button onClick={handleSubmitForReview} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
-        Submit for Review
+      <Button onClick={handleAdvance} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+        Rate Verification Complete → Drafting
       </Button>
     </div>
   );

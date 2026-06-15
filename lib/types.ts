@@ -5,7 +5,7 @@
  */
 
 export type UserRole = "admin" | "surveyor" | "draughtsman" | "report_staff";
-export type ProjectStatus = "lead" | "survey" | "drafting" | "report" | "review";
+export type ProjectStatus = "lead" | "survey" | "rate_verification" | "drafting" | "checking" | "print" | "scan" | "dispatch";
 
 export interface Profile {
   id: string;
@@ -105,9 +105,12 @@ export interface ProjectFile {
 export const PROJECT_STAGES: { value: ProjectStatus; label: string }[] = [
   { value: "lead", label: "Lead" },
   { value: "survey", label: "Survey" },
-  { value: "drafting", label: "Drafting" },
-  { value: "report", label: "Report" },
-  { value: "review", label: "Review" },
+  { value: "rate_verification", label: "Rate Verification" },
+  { value: "drafting", label: "Drafting Report" },
+  { value: "checking", label: "Checking" },
+  { value: "print", label: "Print" },
+  { value: "scan", label: "Scan" },
+  { value: "dispatch", label: "Dispatch" },
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -120,9 +123,12 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const STATUS_COLORS: Record<ProjectStatus, string> = {
   lead: "bg-slate-100 text-slate-700",
   survey: "bg-blue-100 text-blue-700",
+  rate_verification: "bg-orange-100 text-orange-700",
   drafting: "bg-amber-100 text-amber-700",
-  report: "bg-purple-100 text-purple-700",
-  review: "bg-green-100 text-green-700",
+  checking: "bg-cyan-100 text-cyan-700",
+  print: "bg-indigo-100 text-indigo-700",
+  scan: "bg-violet-100 text-violet-700",
+  dispatch: "bg-green-100 text-green-700",
 };
 
 export interface StaffDocument {
