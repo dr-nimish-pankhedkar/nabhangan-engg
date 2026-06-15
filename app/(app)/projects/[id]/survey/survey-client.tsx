@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { uploadProjectFile } from "@/lib/storage";
-import { logFileRecord, saveSiteVisitReport, submitSiteVisitReport } from "./actions";
+import { logFileRecord, saveSiteVisitReport, submitSiteVisitReport, updateCaseInfoFromSurvey } from "./actions";
 import { FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Camera, MapPin, Locate, X, AlertTriangle } from "lucide-react";
+import { CheckCircle, Camera, Locate, X, AlertTriangle, Pencil } from "lucide-react";
 
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_SIZE_MB = 5;
@@ -70,8 +70,12 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-function d(report: Record<string, string> | null, key: string): string {
-  return report?.[key] || "";
+function str(v: unknown): string { return typeof v === "string" ? v : ""; }
+
+function d(report: Record<string, string> | null, bm: Record<string, unknown>, key: string): string {
+  if (report?.[key]) return report[key];
+  if (bm && typeof bm[key] === "string") return bm[key] as string;
+  return "";
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -98,6 +102,19 @@ function ReadOnlyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function EditField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs text-slate-400">{label}</label>
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 text-xs"
+      />
+    </div>
+  );
+}
+
 export default function SurveyStageClient({
   projectId,
   userId,
@@ -113,49 +130,96 @@ export default function SurveyStageClient({
 }) {
   const router = useRouter();
   const m = project.bank_metadata || {};
+
+  const [editingLead, setEditingLead] = useState(false);
+  const [leadEdits, setLeadEdits] = useState<Record<string, string>>({
+    bank_name: str(project.bank_name),
+    branch: str(m.branch),
+    bank_manager_name: str(m.bank_manager_name),
+    bank_manager_mob: str(m.bank_manager_mob),
+    hlc_dsa_name: str(m.hlc_dsa_name),
+    hlc_dsa_mob: str(m.hlc_dsa_mob),
+    owner_name: str(m.owner_name),
+    owner_mob: str(m.owner_mob),
+    proposed_owner: str(m.proposed_owner),
+    proposed_owner_mob: str(m.proposed_owner_mob),
+    property_type: str(m.property_type),
+    flat_house_no: str(m.flat_house_no),
+    building_name: str(m.building_name),
+    plot_no: str(m.plot_no),
+    survey_no: str(m.survey_no),
+    project_address: str(project.project_address),
+    landmark_1: str(m.landmark_1),
+    landmark_2: str(m.landmark_2),
+    loan_required: str(m.loan_required),
+  });
+  const [savingLead, setSavingLead] = useState(false);
+  const [leadSaveError, setLeadSaveError] = useState<string | null>(null);
+
+  function setField(key: string) {
+    return (v: string) => setLeadEdits((prev) => ({ ...prev, [key]: v }));
+  }
+
+  async function handleSaveLead() {
+    setSavingLead(true);
+    setLeadSaveError(null);
+    const result = await updateCaseInfoFromSurvey(projectId, {
+      bank_name: leadEdits.bank_name,
+      project_address: leadEdits.project_address,
+      bank_metadata: { ...m, ...leadEdits },
+    });
+    setSavingLead(false);
+    if (result.error) {
+      setLeadSaveError(result.error);
+    } else {
+      setEditingLead(false);
+      router.refresh();
+    }
+  }
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      visit_date: d(existingReport, "visit_date"),
-      plot_area: d(existingReport, "plot_area"),
-      carpet_area: d(existingReport, "carpet_area"),
-      builtup_area: d(existingReport, "builtup_area"),
-      construction_stage: d(existingReport, "construction_stage"),
-      use_of_property: d(existingReport, "use_of_property"),
-      age_of_building: d(existingReport, "age_of_building"),
-      occupied_by: d(existingReport, "occupied_by"),
-      lift: d(existingReport, "lift"),
-      road_width: d(existingReport, "road_width"),
-      total_floors: d(existingReport, "total_floors"),
-      property_floor: d(existingReport, "property_floor"),
-      no_of_rooms: d(existingReport, "no_of_rooms"),
-      no_of_toilets: d(existingReport, "no_of_toilets"),
-      total_flats: d(existingReport, "total_flats"),
-      per_floor_flats: d(existingReport, "per_floor_flats"),
-      parking: d(existingReport, "parking"),
-      rcc_type: d(existingReport, "rcc_type"),
-      precise_latitude: d(existingReport, "precise_latitude"),
-      precise_longitude: d(existingReport, "precise_longitude"),
-      facing: d(existingReport, "facing"),
-      boundary_east: d(existingReport, "boundary_east"),
-      boundary_west: d(existingReport, "boundary_west"),
-      boundary_north: d(existingReport, "boundary_north"),
-      boundary_south: d(existingReport, "boundary_south"),
-      person_met: d(existingReport, "person_met"),
-      person_met_mob: d(existingReport, "person_met_mob"),
-      site_visit_by: d(existingReport, "site_visit_by"),
-      site_visit_by_mob: d(existingReport, "site_visit_by_mob"),
-      nearby_rate: d(existingReport, "nearby_rate"),
-      valuation_method: d(existingReport, "valuation_method"),
-      plot_area_val: d(existingReport, "plot_area_val"),
-      plot_rate: d(existingReport, "plot_rate"),
-      plot_valuation: d(existingReport, "plot_valuation"),
-      builtup_area_val: d(existingReport, "builtup_area_val"),
-      builtup_rate: d(existingReport, "builtup_rate"),
-      builtup_valuation: d(existingReport, "builtup_valuation"),
-      extra_items: d(existingReport, "extra_items"),
-      final_valuation: d(existingReport, "final_valuation"),
-      remark: d(existingReport, "remark"),
+      visit_date: d(existingReport, m, "visit_date"),
+      plot_area: d(existingReport, m, "plot_area"),
+      carpet_area: d(existingReport, m, "carpet_area"),
+      builtup_area: d(existingReport, m, "builtup_area"),
+      construction_stage: d(existingReport, m, "construction_stage"),
+      use_of_property: d(existingReport, m, "use_of_property"),
+      age_of_building: d(existingReport, m, "age_of_building"),
+      occupied_by: d(existingReport, m, "occupied_by"),
+      lift: d(existingReport, m, "lift"),
+      road_width: d(existingReport, m, "road_width"),
+      total_floors: d(existingReport, m, "total_floors"),
+      property_floor: d(existingReport, m, "property_floor"),
+      no_of_rooms: d(existingReport, m, "no_of_rooms"),
+      no_of_toilets: d(existingReport, m, "no_of_toilets"),
+      total_flats: d(existingReport, m, "total_flats"),
+      per_floor_flats: d(existingReport, m, "per_floor_flats"),
+      parking: d(existingReport, m, "parking"),
+      rcc_type: d(existingReport, m, "rcc_type"),
+      precise_latitude: d(existingReport, m, "precise_latitude"),
+      precise_longitude: d(existingReport, m, "precise_longitude"),
+      facing: d(existingReport, m, "facing"),
+      boundary_east: d(existingReport, m, "boundary_east"),
+      boundary_west: d(existingReport, m, "boundary_west"),
+      boundary_north: d(existingReport, m, "boundary_north"),
+      boundary_south: d(existingReport, m, "boundary_south"),
+      person_met: d(existingReport, m, "person_met"),
+      person_met_mob: d(existingReport, m, "person_met_mob"),
+      site_visit_by: d(existingReport, m, "site_visit_by"),
+      site_visit_by_mob: d(existingReport, m, "site_visit_by_mob"),
+      nearby_rate: d(existingReport, m, "nearby_rate"),
+      valuation_method: d(existingReport, m, "valuation_method"),
+      plot_area_val: d(existingReport, m, "plot_area_val"),
+      plot_rate: d(existingReport, m, "plot_rate"),
+      plot_valuation: d(existingReport, m, "plot_valuation"),
+      builtup_area_val: d(existingReport, m, "builtup_area_val"),
+      builtup_rate: d(existingReport, m, "builtup_rate"),
+      builtup_valuation: d(existingReport, m, "builtup_valuation"),
+      extra_items: d(existingReport, m, "extra_items"),
+      final_valuation: d(existingReport, m, "final_valuation"),
+      remark: d(existingReport, m, "remark"),
     },
   });
 
@@ -251,33 +315,112 @@ export default function SurveyStageClient({
       <div className="space-y-4">
 
         {/* ── Pre-filled Lead Data ── */}
-        <Section title="Case Information (from Lead — read only)">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
-            <ReadOnlyRow label="Code No." value={m.code_no} />
-            <ReadOnlyRow label="Bank Name" value={project.bank_name} />
-            <ReadOnlyRow label="Branch" value={m.branch} />
-            <ReadOnlyRow label="Bank Manager" value={m.bank_manager_name} />
-            <ReadOnlyRow label="Manager Mob." value={m.bank_manager_mob} />
-            <ReadOnlyRow label="HLC / DSA" value={m.hlc_dsa_name} />
-            <ReadOnlyRow label="HLC / DSA Mob." value={m.hlc_dsa_mob} />
-            <ReadOnlyRow label="Owner" value={m.owner_name} />
-            <ReadOnlyRow label="Owner Mob." value={m.owner_mob} />
-            <ReadOnlyRow label="Proposed Owner" value={m.proposed_owner} />
-            <ReadOnlyRow label="Proposed Owner Mob." value={m.proposed_owner_mob} />
-            <ReadOnlyRow label="Property Type" value={m.property_type} />
-          </div>
-          <div className="pt-1 border-t border-slate-100 mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-            <ReadOnlyRow label="Flat / House No." value={m.flat_house_no} />
-            <ReadOnlyRow label="Building Name" value={m.building_name} />
-            <ReadOnlyRow label="Plot No." value={m.plot_no} />
-            <ReadOnlyRow label="Survey No." value={m.survey_no} />
-            <div className="sm:col-span-2"><ReadOnlyRow label="Address" value={project.project_address} /></div>
-            <ReadOnlyRow label="Landmark 1" value={m.landmark_1} />
-            <ReadOnlyRow label="Landmark 2" value={m.landmark_2} />
-            <ReadOnlyRow label="Loan Required" value={m.loan_required} />
-            <ReadOnlyRow label="Tentative GPS" value={project.latitude && project.longitude ? `${project.latitude}, ${project.longitude}` : "—"} />
-          </div>
-        </Section>
+        <Card className="border-slate-200">
+          <CardHeader className="py-3 px-4 pb-0 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm text-[#1e3a5f] font-semibold">
+              Case Information (from Lead)
+            </CardTitle>
+            {!editingLead ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1.5 text-slate-500 hover:text-[#1e3a5f]"
+                onClick={() => { setLeadSaveError(null); setEditingLead(true); }}
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-slate-500"
+                  onClick={() => { setEditingLead(false); setLeadSaveError(null); }}
+                  disabled={savingLead}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-7 px-3 text-xs bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+                  onClick={handleSaveLead}
+                  disabled={savingLead}
+                >
+                  {savingLead ? "Saving…" : "Save Changes"}
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-3 space-y-3">
+            {!editingLead ? (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
+                  <ReadOnlyRow label="Code No." value={str(m.code_no)} />
+                  <ReadOnlyRow label="Bank Name" value={str(project.bank_name)} />
+                  <ReadOnlyRow label="Branch" value={str(m.branch)} />
+                  <ReadOnlyRow label="Bank Manager" value={str(m.bank_manager_name)} />
+                  <ReadOnlyRow label="Manager Mob." value={str(m.bank_manager_mob)} />
+                  <ReadOnlyRow label="HLC / DSA" value={str(m.hlc_dsa_name)} />
+                  <ReadOnlyRow label="HLC / DSA Mob." value={str(m.hlc_dsa_mob)} />
+                  <ReadOnlyRow label="Owner" value={str(m.owner_name)} />
+                  <ReadOnlyRow label="Owner Mob." value={str(m.owner_mob)} />
+                  <ReadOnlyRow label="Proposed Owner" value={str(m.proposed_owner)} />
+                  <ReadOnlyRow label="Proposed Owner Mob." value={str(m.proposed_owner_mob)} />
+                  <ReadOnlyRow label="Property Type" value={str(m.property_type)} />
+                </div>
+                <div className="pt-1 border-t border-slate-100 mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                  <ReadOnlyRow label="Flat / House No." value={str(m.flat_house_no)} />
+                  <ReadOnlyRow label="Building Name" value={str(m.building_name)} />
+                  <ReadOnlyRow label="Plot No." value={str(m.plot_no)} />
+                  <ReadOnlyRow label="Survey No." value={str(m.survey_no)} />
+                  <div className="sm:col-span-2"><ReadOnlyRow label="Address" value={str(project.project_address)} /></div>
+                  <ReadOnlyRow label="Landmark 1" value={str(m.landmark_1)} />
+                  <ReadOnlyRow label="Landmark 2" value={str(m.landmark_2)} />
+                  <ReadOnlyRow label="Loan Required" value={str(m.loan_required)} />
+                  <ReadOnlyRow label="Tentative GPS" value={project.latitude && project.longitude ? `${project.latitude}, ${project.longitude}` : "—"} />
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2">
+                  Editing case details. Correct any mismatches and click Save Changes.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <EditField label="Bank Name" value={leadEdits.bank_name} onChange={setField("bank_name")} />
+                  <EditField label="Branch" value={leadEdits.branch} onChange={setField("branch")} />
+                  <EditField label="Bank Manager" value={leadEdits.bank_manager_name} onChange={setField("bank_manager_name")} />
+                  <EditField label="Manager Mob." value={leadEdits.bank_manager_mob} onChange={setField("bank_manager_mob")} />
+                  <EditField label="HLC / DSA" value={leadEdits.hlc_dsa_name} onChange={setField("hlc_dsa_name")} />
+                  <EditField label="HLC / DSA Mob." value={leadEdits.hlc_dsa_mob} onChange={setField("hlc_dsa_mob")} />
+                  <EditField label="Owner" value={leadEdits.owner_name} onChange={setField("owner_name")} />
+                  <EditField label="Owner Mob." value={leadEdits.owner_mob} onChange={setField("owner_mob")} />
+                  <EditField label="Proposed Owner" value={leadEdits.proposed_owner} onChange={setField("proposed_owner")} />
+                  <EditField label="Proposed Owner Mob." value={leadEdits.proposed_owner_mob} onChange={setField("proposed_owner_mob")} />
+                  <EditField label="Property Type" value={leadEdits.property_type} onChange={setField("property_type")} />
+                  <EditField label="Flat / House No." value={leadEdits.flat_house_no} onChange={setField("flat_house_no")} />
+                  <EditField label="Building Name" value={leadEdits.building_name} onChange={setField("building_name")} />
+                  <EditField label="Plot No." value={leadEdits.plot_no} onChange={setField("plot_no")} />
+                  <EditField label="Survey No." value={leadEdits.survey_no} onChange={setField("survey_no")} />
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <EditField label="Address" value={leadEdits.project_address} onChange={setField("project_address")} />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <EditField label="Landmark 1" value={leadEdits.landmark_1} onChange={setField("landmark_1")} />
+                  <EditField label="Landmark 2" value={leadEdits.landmark_2} onChange={setField("landmark_2")} />
+                  <EditField label="Loan Required" value={leadEdits.loan_required} onChange={setField("loan_required")} />
+                </div>
+                {leadSaveError && (
+                  <p className="text-xs text-red-500">{leadSaveError}</p>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* ── Visit Details ── */}
         <Section title="Site Visit Details">

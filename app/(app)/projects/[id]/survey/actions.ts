@@ -118,3 +118,34 @@ export async function submitSiteVisitReport(input: {
   if (saveResult.error) return saveResult;
   return advanceStage(input.projectId, "drafting");
 }
+
+const UpdateCaseSchema = z.object({
+  bank_name: z.string().min(1).max(200),
+  project_address: z.string().min(1).max(1000),
+  bank_metadata: z.record(z.string(), z.unknown()),
+});
+
+export async function updateCaseInfoFromSurvey(
+  projectId: string,
+  input: {
+    bank_name: string;
+    project_address: string;
+    bank_metadata: Record<string, unknown>;
+  }
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
+  const parsed = UpdateCaseSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
+  const { error } = await supabase.from("projects").update({
+    bank_name: parsed.data.bank_name,
+    project_address: parsed.data.project_address,
+    bank_metadata: parsed.data.bank_metadata,
+  }).eq("id", projectId);
+
+  if (error) return { error: error.message };
+  return {};
+}
