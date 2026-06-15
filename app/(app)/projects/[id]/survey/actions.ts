@@ -89,3 +89,32 @@ export async function logFileRecord(input: {
   if (error) return { error: error.message };
   return {};
 }
+
+export async function saveSiteVisitReport(input: {
+  projectId: string;
+  data: Record<string, string>;
+}): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  if (!UUIDSchema.safeParse(input.projectId).success) return { error: "Invalid project ID" };
+
+  const { error } = await supabase.from("site_visit_reports").upsert({
+    project_id: input.projectId,
+    user_id: user.id,
+    data: input.data,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "project_id" });
+
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function submitSiteVisitReport(input: {
+  projectId: string;
+  data: Record<string, string>;
+}): Promise<{ error?: string }> {
+  const saveResult = await saveSiteVisitReport(input);
+  if (saveResult.error) return saveResult;
+  return advanceStage(input.projectId, "drafting");
+}

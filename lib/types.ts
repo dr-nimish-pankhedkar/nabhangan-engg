@@ -159,6 +159,24 @@ export interface TaskRequest {
   projects?: Project;
 }
 
+export interface SiteVisitReport {
+  id: string;
+  project_id: string;
+  user_id: string;
+  data: Record<string, string>;
+  submitted_at: string;
+  updated_at: string;
+}
+
+export const PROPERTY_TYPES = [
+  "Flat", "Bungalow", "Row House", "Shop", "Industrial",
+  "SSR", "Vacant Plot", "NPA Case", "Project", "Estimate Vetting",
+] as const;
+
+export const FACING_OPTIONS = ["East", "West", "North", "South", "Northeast", "Northwest", "Southeast", "Southwest"] as const;
+export const RCC_OPTIONS = ["RCC", "Load Bearing", "Ac Sheet Roof"] as const;
+export const VALUATION_METHODS = ["Composite Method", "Land + Building Method"] as const;
+
 export const DOC_TYPES = [
   { value: "id_proof", label: "ID Proof (Aadhar/PAN)" },
   { value: "address_proof", label: "Address Proof" },
