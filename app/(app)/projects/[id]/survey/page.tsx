@@ -7,6 +7,10 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SurveyStageClient from "./survey-client";
+import StagePendingCard from "../stage-pending-card";
+
+const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
+const THIS_STAGE_IDX = 1; // survey
 
 export default async function SurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
@@ -15,14 +19,34 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
 
   const { id } = await params;
 
-  const [projectRes, svrRes, photosRes, submissionRes] = await Promise.all([
+  const [projectRes, svrRes, photosRes, submissionRes, profileRes] = await Promise.all([
     supabase.from("projects").select("*, profiles(full_name)").eq("id", id).single(),
     supabase.from("site_visit_reports").select("*").eq("project_id", id).maybeSingle(),
     supabase.from("project_files").select("id, file_name, file_path, uploaded_at").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
     supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "survey").maybeSingle(),
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
   ]);
 
   if (!projectRes.data) notFound();
+
+  const isAdmin = profileRes.data?.role === "admin";
+  const projectStageIdx = STAGE_ORDER.indexOf(projectRes.data.status);
+
+  if (!isAdmin && projectStageIdx < THIS_STAGE_IDX) {
+    const { data: assignment } = await supabase
+      .from("project_assignments")
+      .select("profiles(full_name)")
+      .eq("project_id", id)
+      .eq("stage", projectRes.data.status)
+      .maybeSingle();
+    const assignedTo = (assignment as any)?.profiles?.full_name ?? null;
+    return (
+      <div className="max-w-2xl">
+        <h1 className="text-xl font-semibold text-slate-800 mb-6">Site Visit Report</h1>
+        <StagePendingCard activeStage={projectRes.data.status} assignedTo={assignedTo} />
+      </div>
+    );
+  }
 
   const existingPhotos = photosRes.data || [];
   const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
