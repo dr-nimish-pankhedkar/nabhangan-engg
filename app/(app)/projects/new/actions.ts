@@ -44,6 +44,8 @@ export async function createProject(input: {
   const parsed = CreateProjectSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
 
+  const hasSurveyAssignment = isAdmin && parsed.data.assignments?.some((a) => a.stage === "survey");
+
   const { data, error } = await supabase
     .from("projects")
     .insert({
@@ -53,7 +55,7 @@ export async function createProject(input: {
       longitude: parsed.data.longitude,
       bank_metadata: parsed.data.bank_metadata,
       created_by: user.id,
-      status: "survey",
+      status: hasSurveyAssignment ? "survey" : "lead",
       requires_review: !isAdmin,
       documents_pending: false,
     })

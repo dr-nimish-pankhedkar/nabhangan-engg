@@ -39,6 +39,15 @@ export async function createAssignment(input: {
 
   const { error } = await supabase.from("project_assignments").insert(parsed.data);
   if (error) return { error: error.message };
+
+  // Auto-advance lead → survey when survey staff is assigned
+  if (parsed.data.stage === "survey") {
+    const { data: proj } = await supabase.from("projects").select("status").eq("id", parsed.data.project_id).single();
+    if (proj?.status === "lead") {
+      await supabase.from("projects").update({ status: "survey" }).eq("id", parsed.data.project_id);
+    }
+  }
+
   return {};
 }
 

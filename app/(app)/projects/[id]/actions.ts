@@ -100,6 +100,13 @@ export async function updateProjectInfo(
       await supabase.from("project_assignments").insert(
         validAssignments.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
       );
+      // Auto-advance lead → survey when a survey assignee is set
+      if (validAssignments.some((a) => a.stage === "survey")) {
+        const { data: proj } = await supabase.from("projects").select("status").eq("id", projectId).single();
+        if (proj?.status === "lead") {
+          await supabase.from("projects").update({ status: "survey" }).eq("id", projectId);
+        }
+      }
     }
   }
 
