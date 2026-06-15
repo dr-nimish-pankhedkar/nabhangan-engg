@@ -133,10 +133,9 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Stage tiles — all 8 stages */}
+        {/* Stage tiles — survey through dispatch */}
         {(() => {
           const STAGE_EMOJI: Record<string, string> = {
-            lead: "💡",
             survey: "📍",
             rate_verification: "📊",
             drafting: "✏️",
@@ -145,11 +144,11 @@ export default async function DashboardPage() {
             scan: "📷",
             dispatch: "📬",
           };
+          const visibleStages = PROJECT_STAGES.filter((s) => s.value !== "lead");
           return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
-              {PROJECT_STAGES.map((stage) => {
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+              {visibleStages.map((stage) => {
                 const isDispatch = stage.value === "dispatch";
-                const denominator = isDispatch ? total : activeCases;
                 const count = counts[stage.value];
                 return (
                   <Card key={stage.value} className={cn(
@@ -162,8 +161,8 @@ export default async function DashboardPage() {
                       <p className={cn("text-2xl font-bold leading-none mt-1.5", isDispatch ? "text-green-600" : "text-[#1e3a5f]")}>
                         {count}
                       </p>
-                      <p className="text-[11px] text-slate-400 mt-1 tabular-nums">
-                        {denominator > 0 ? `${count}/${denominator}` : "0/0"}
+                      <p className={cn("text-[10px] mt-1 font-medium", isDispatch ? "text-green-500" : "text-slate-400")}>
+                        {isDispatch ? "completed" : "in progress"}
                       </p>
                     </CardContent>
                   </Card>
@@ -176,11 +175,11 @@ export default async function DashboardPage() {
         <Card className="border-slate-200 mb-8">
           <CardHeader>
             <CardTitle className="text-sm text-slate-600">Stage Distribution</CardTitle>
-            <p className="text-xs text-slate-400">Click a stage to see which cases are in it · counts shown as stage / total active</p>
+            <p className="text-xs text-slate-400">Click a stage to see which cases are in it · non-dispatch = in progress at that stage · dispatch = completed</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {PROJECT_STAGES.map((stage) => {
+              {PROJECT_STAGES.filter((s) => s.value !== "lead").map((stage) => {
                 const isDispatch = stage.value === "dispatch";
                 const denominator = isDispatch ? total : activeCases;
                 const pct = denominator > 0 ? Math.round((counts[stage.value] / denominator) * 100) : 0;
@@ -197,8 +196,8 @@ export default async function DashboardPage() {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-xs text-slate-400 w-12 text-right shrink-0 tabular-nums">
-                        {counts[stage.value]}/{denominator}
+                      <span className={`text-xs w-12 text-right shrink-0 tabular-nums font-medium ${isDispatch ? "text-green-600" : "text-slate-500"}`}>
+                        {counts[stage.value]} {isDispatch ? "done" : "active"}
                       </span>
                     </summary>
                     <div className="pl-[116px] pr-14 pt-1.5 pb-2">

@@ -53,7 +53,7 @@ export async function createProject(input: {
       longitude: parsed.data.longitude,
       bank_metadata: parsed.data.bank_metadata,
       created_by: user.id,
-      status: "lead",
+      status: "survey",
       requires_review: !isAdmin,
       documents_pending: false,
     })
