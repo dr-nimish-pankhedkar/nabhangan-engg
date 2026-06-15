@@ -11,13 +11,13 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string }>;
+  searchParams: Promise<{ stage?: string; docs_pending?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,6 +32,7 @@ export default async function ProjectsPage({
   const isAdmin = profile?.role === "admin";
   const params = await searchParams;
   const activeStage = params.stage as ProjectStatus | undefined;
+  const docsFilter = params.docs_pending === "1";
 
   let query = supabase
     .from("projects")
@@ -47,8 +48,8 @@ export default async function ProjectsPage({
     if (ids.length === 0) {
       return (
         <div>
-          <h1 className="text-xl font-semibold text-slate-800 mb-6">Projects</h1>
-          <p className="text-slate-500 text-sm">No projects assigned to you.</p>
+          <h1 className="text-xl font-semibold text-slate-800 mb-6">Cases</h1>
+          <p className="text-slate-500 text-sm">No cases assigned to you.</p>
         </div>
       );
     }
@@ -59,25 +60,28 @@ export default async function ProjectsPage({
     query = query.eq("status", activeStage);
   }
 
+  if (docsFilter) {
+    query = query.eq("documents_pending", true);
+  }
+
   const { data: projects } = await query;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
-        <h1 className="text-xl font-semibold text-slate-800">Projects</h1>
-        {isAdmin && (
-          <Link href="/projects/new" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white gap-2">
-              <Plus className="h-4 w-4" />
-              New Project
-            </Button>
-          </Link>
-        )}
+        <h1 className="text-xl font-semibold text-slate-800">Cases</h1>
+        <Link href="/projects/new" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white gap-2">
+            <Plus className="h-4 w-4" />
+            New Case
+          </Button>
+        </Link>
       </div>
 
-      <div className="flex gap-2 mb-6 flex-wrap">
+      {/* Stage filters */}
+      <div className="flex gap-2 mb-3 flex-wrap">
         <Link href="/projects">
-          <Badge variant={!activeStage ? "default" : "outline"} className={!activeStage ? "bg-[#1e3a5f]" : "cursor-pointer"}>
+          <Badge variant={!activeStage && !docsFilter ? "default" : "outline"} className={!activeStage && !docsFilter ? "bg-[#1e3a5f]" : "cursor-pointer"}>
             All
           </Badge>
         </Link>
@@ -91,19 +95,48 @@ export default async function ProjectsPage({
             </Badge>
           </Link>
         ))}
+        <Link href="/projects?docs_pending=1">
+          <Badge
+            variant={docsFilter ? "default" : "outline"}
+            className={cn(
+              docsFilter ? "bg-amber-600" : "cursor-pointer border-amber-300 text-amber-700 hover:bg-amber-50",
+              "gap-1"
+            )}
+          >
+            <AlertTriangle className="h-3 w-3" />
+            Docs Pending
+          </Badge>
+        </Link>
       </div>
 
       {!projects || projects.length === 0 ? (
-        <p className="text-slate-500 text-sm">No projects found.</p>
+        <p className="text-slate-500 text-sm mt-4">
+          {docsFilter ? "No cases with pending documents." : "No cases found."}
+        </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-4">
           {projects.map((p: any) => (
             <Link key={p.id} href={`/projects/${p.id}`}>
-              <Card className="border-slate-200 hover:shadow-sm transition-shadow cursor-pointer">
+              <Card className={cn(
+                "border-slate-200 hover:shadow-sm transition-shadow cursor-pointer",
+                p.documents_pending && "border-amber-200"
+              )}>
                 <CardContent className="py-4">
                   <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                      <p className="font-medium text-slate-800 truncate">{p.bank_name}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-slate-800 truncate">{p.bank_name}</p>
+                        {p.documents_pending && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 rounded px-1.5 py-0.5 shrink-0">
+                            <AlertTriangle className="h-3 w-3" /> Docs Pending
+                          </span>
+                        )}
+                        {p.requires_review && isAdmin && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-100 rounded px-1.5 py-0.5 shrink-0">
+                            <Clock className="h-3 w-3" /> Needs Review
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-500 mt-0.5 truncate">{p.project_address}</p>
                       {isAdmin && (
                         <p className="text-xs text-slate-400 mt-1 truncate">Created by: {p.profiles?.full_name}</p>

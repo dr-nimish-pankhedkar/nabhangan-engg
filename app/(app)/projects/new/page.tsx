@@ -19,18 +19,19 @@ export default async function NewProjectPage() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") redirect("/projects");
+  if (!profile) redirect("/login");
 
-  const { data: staff } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, designation")
-    .eq("is_active", true)
-    .order("full_name");
+  const isAdmin = profile.role === "admin";
+
+  // Only admin sees the staff list (for stage assignments)
+  const staff = isAdmin
+    ? (await supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name")).data || []
+    : [];
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-semibold text-slate-800 mb-6">New Project</h1>
-      <NewProjectForm userId={user.id} staff={staff || []} />
+      <h1 className="text-xl font-semibold text-slate-800 mb-6">New Case</h1>
+      <NewProjectForm userId={user.id} staff={staff} isAdmin={isAdmin} />
     </div>
   );
 }

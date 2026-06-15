@@ -93,7 +93,7 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl sm:text-3xl font-bold text-[#1e3a5f]">{counts[stage.value]}</p>
-                <p className="text-xs text-slate-400 mt-1">projects</p>
+                <p className="text-xs text-slate-400 mt-1">cases</p>
               </CardContent>
             </Card>
           ))}
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
                     </summary>
                     <div className="pl-[88px] pr-9 pt-1.5 pb-2">
                       {stageProjects.length === 0 ? (
-                        <p className="text-xs text-slate-400">No projects in this stage.</p>
+                        <p className="text-xs text-slate-400">No cases in this stage.</p>
                       ) : (
                         <div className="flex flex-wrap gap-1.5">
                           {stageProjects.map((p: any) => (

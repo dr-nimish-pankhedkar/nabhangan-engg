@@ -34,6 +34,8 @@ export interface Project {
   created_by: string;
   created_at: string;
   updated_at: string;
+  documents_pending: boolean;
+  requires_review: boolean;
   profiles?: Profile;
 }
 

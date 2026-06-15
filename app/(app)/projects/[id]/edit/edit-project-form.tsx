@@ -11,13 +11,13 @@ import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createProject } from "./actions";
+import { updateProjectInfo } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, UserCheck, Info } from "lucide-react";
+import { Plus, Trash2, UserCheck } from "lucide-react";
 
 interface StaffMember {
   id: string;
@@ -49,20 +49,40 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function NewProjectForm({
-  userId,
+export default function EditProjectForm({
+  projectId,
+  project,
   staff,
-  isAdmin,
+  currentAssignments,
 }: {
-  userId: string;
+  projectId: string;
+  project: any;
   staff: StaffMember[];
-  isAdmin: boolean;
+  currentAssignments: Record<string, string>;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+
+  const metadataEntries = Object.entries(project.bank_metadata || {}).map(([key, value]) => ({
+    key,
+    value: String(value),
+  }));
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { metadata: [], assignments: {} },
+    defaultValues: {
+      bank_name: project.bank_name || "",
+      project_address: project.project_address || "",
+      latitude: project.latitude != null ? String(project.latitude) : "",
+      longitude: project.longitude != null ? String(project.longitude) : "",
+      metadata: metadataEntries,
+      assignments: {
+        survey: currentAssignments.survey || "",
+        drafting: currentAssignments.drafting || "",
+        report: currentAssignments.report || "",
+        review: currentAssignments.review || "",
+      },
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -81,34 +101,26 @@ export default function NewProjectForm({
       .filter(([, uid]) => uid && uid !== "none" && uid.length > 0)
       .map(([stage, uid]) => ({ stage, user_id: uid as string }));
 
-    const result = await createProject({
+    const result = await updateProjectInfo(projectId, {
       bank_name: data.bank_name,
       project_address: data.project_address,
       latitude: data.latitude ? parseFloat(data.latitude) : null,
       longitude: data.longitude ? parseFloat(data.longitude) : null,
       bank_metadata: bankMetadata,
-      created_by: userId,
-      assignments: isAdmin ? assignmentsInput : [],
+      assignments: assignmentsInput,
     });
 
     if (result.error) {
       setError(result.error);
     } else {
-      router.push(`/projects/${result.id}`);
+      router.push(`/projects/${projectId}`);
+      router.refresh();
     }
   }
 
   return (
     <Card className="border-slate-200">
       <CardContent className="pt-6">
-        {!isAdmin && (
-          <div className="flex items-start gap-2 mb-5 rounded-md bg-blue-50 border border-blue-200 px-4 py-3">
-            <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-blue-700">
-              This case will be sent to the admin for review and staff assignment before becoming active.
-            </p>
-          </div>
-        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
@@ -207,64 +219,69 @@ export default function NewProjectForm({
               </div>
             </div>
 
-            {/* Staff Assignments — admin only */}
-            {isAdmin && (
-              <div className="border border-slate-200 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <UserCheck className="h-4 w-4 text-[#1e3a5f]" />
-                  <span className="text-sm font-medium text-slate-700">Assign Staff to Stages</span>
-                  <span className="text-xs text-slate-400">(optional)</span>
-                </div>
-                {ASSIGNABLE_STAGES.map((stage) => (
-                  <FormField
-                    key={stage.value}
-                    control={form.control}
-                    name={`assignments.${stage.value}` as any}
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-3">
-                          <FormLabel className="w-20 text-xs text-slate-500 shrink-0">{stage.label}</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger className="text-sm">
-                                <SelectValue placeholder="No staff assigned" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">No staff assigned</SelectItem>
-                              {staff.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>
-                                  {s.full_name}
-                                  {s.designation && (
-                                    <span className="text-slate-400 ml-1">— {s.designation}</span>
-                                  )}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                ))}
-                {staff.length === 0 && (
-                  <p className="text-xs text-slate-400">No active staff found. Add staff first.</p>
-                )}
+            {/* Staff Assignments */}
+            <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <UserCheck className="h-4 w-4 text-[#1e3a5f]" />
+                <span className="text-sm font-medium text-slate-700">Staff Assignments</span>
+                <span className="text-xs text-slate-400">(replaces current assignments)</span>
               </div>
-            )}
+              {ASSIGNABLE_STAGES.map((stage) => (
+                <FormField
+                  key={stage.value}
+                  control={form.control}
+                  name={`assignments.${stage.value}` as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormLabel className="w-20 text-xs text-slate-500 shrink-0">{stage.label}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="No staff assigned" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No staff assigned</SelectItem>
+                            {staff.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.full_name}
+                                {s.designation && (
+                                  <span className="text-slate-400 ml-1">— {s.designation}</span>
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
 
             {error && (
               <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">
                 <p className="text-sm text-red-600 font-medium">Error: {error}</p>
               </div>
             )}
-            <Button
-              type="submit"
-              className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? "Creating…" : "Create Case"}
-            </Button>
+
+            <div className="flex gap-3">
+              <Button
+                type="submit"
+                className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Saving…" : "Save Changes"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/projects/${projectId}`)}
+              >
+                Cancel
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>

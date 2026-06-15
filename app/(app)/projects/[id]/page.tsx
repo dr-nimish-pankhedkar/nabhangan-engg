@@ -10,10 +10,13 @@ import { createClient } from "@/lib/supabase/server";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, FileText, ShieldCheck, PartyPopper } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, FileText, ShieldCheck, PartyPopper, AlertTriangle, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StartSurveyButton from "./start-survey-button";
 import AdvanceStageButton from "./advance-stage-button";
+import DocumentsPendingToggle from "./documents-pending-toggle";
+import ApproveCaseButton from "./approve-case-button";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -50,11 +53,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!project) notFound();
 
+  const isAdmin = profile?.role === "admin";
   const currentStageIdx = STAGE_ORDER.indexOf(project.status);
   const progressPct = Math.round((currentStageIdx / (STAGE_ORDER.length - 1)) * 100);
   const isComplete = project.status === "review";
 
-  // Fetch history for all stages
   const [filesRes, responsesRes, timelogsRes, assignmentsRes] = await Promise.all([
     supabase.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
     supabase.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
@@ -67,8 +70,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const timelogs = timelogsRes.data || [];
   const assignments = assignmentsRes.data || [];
 
-  // Detect projects stuck on a stage whose checklist was already submitted
-  // (e.g. legacy submissions from before checklist-submit auto-advanced the stage)
   const nextStageIdx = currentStageIdx + 1;
   const nextStage = nextStageIdx < STAGE_ORDER.length ? STAGE_ORDER[nextStageIdx] : null;
   const currentStageDone = !isComplete && responses.some((r: any) => r.stage === project.status);
@@ -76,30 +77,69 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6 min-w-0 flex-wrap">
-        <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-700 shrink-0">Projects</Link>
+        <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-700 shrink-0">Cases</Link>
         <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
         <h1 className="text-xl font-semibold text-slate-800 truncate min-w-0">{project.bank_name}</h1>
         <Badge className={cn(STATUS_COLORS[project.status as ProjectStatus], "shrink-0")}>
           {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
         </Badge>
+        {project.documents_pending && (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 rounded px-2 py-0.5 shrink-0">
+            <AlertTriangle className="h-3.5 w-3.5" /> Docs Pending
+          </span>
+        )}
       </div>
 
-      <Card className="border-slate-200 mb-6">
+      <Card className="border-slate-200 mb-4">
         <CardContent className="pt-4 pb-4">
-          <p className="text-sm text-slate-500">{project.project_address}</p>
-          {profile?.role === "admin" && (
-            <p className="text-xs text-slate-400 mt-1">Created by: {(project as any).profiles?.full_name}</p>
-          )}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-sm text-slate-500">{project.project_address}</p>
+              {isAdmin && (
+                <p className="text-xs text-slate-400 mt-1">Created by: {(project as any).profiles?.full_name}</p>
+              )}
+            </div>
+            {isAdmin && (
+              <Link href={`/projects/${id}/edit`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
+                  <Pencil className="h-3.5 w-3.5" /> Edit Case
+                </Button>
+              </Link>
+            )}
+          </div>
         </CardContent>
       </Card>
 
+      {/* Documents Pending toggle — admin only */}
+      {isAdmin && (
+        <div className="mb-4">
+          <DocumentsPendingToggle projectId={id} initialValue={!!project.documents_pending} />
+        </div>
+      )}
+
+      {/* Documents pending warning for non-admin */}
+      {!isAdmin && project.documents_pending && (
+        <div className="flex items-center gap-3 mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Documents Pending</p>
+            <p className="text-xs text-amber-600">Required documents have not yet been submitted for this case.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Needs admin review banner */}
+      {isAdmin && project.requires_review && (
+        <ApproveCaseButton projectId={id} />
+      )}
+
       {/* Lead → Survey kickoff */}
-      {project.status === "lead" && profile?.role === "admin" && (
+      {project.status === "lead" && isAdmin && !project.requires_review && (
         <StartSurveyButton projectId={id} />
       )}
 
-      {/* Stuck-stage recovery: checklist already submitted but stage didn't advance */}
-      {currentStageDone && nextStage && profile?.role === "admin" && (
+      {/* Stuck-stage recovery */}
+      {currentStageDone && nextStage && isAdmin && (
         <AdvanceStageButton
           projectId={id}
           nextStatus={nextStage}
@@ -112,15 +152,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <div className="flex items-center gap-3 mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
           <PartyPopper className="h-5 w-5 text-green-600 shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-green-700">Project reached final stage — Review</p>
-            <p className="text-xs text-green-600/80">All milestones completed. This project is ready for sign-off.</p>
+            <p className="text-sm font-semibold text-green-700">Case reached final stage — Review</p>
+            <p className="text-xs text-green-600/80">All milestones completed. This case is ready for sign-off.</p>
           </div>
         </div>
       )}
 
       {/* Progress */}
       <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
-        <span>Project Progress</span>
+        <span>Case Progress</span>
         <span className="font-medium text-[#1e3a5f]">{progressPct}% complete</span>
       </div>
       <div className="w-full bg-slate-100 rounded-full h-2 mb-8">

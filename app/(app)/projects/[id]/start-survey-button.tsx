@@ -33,7 +33,7 @@ export default function StartSurveyButton({ projectId }: { projectId: string }) 
     <div className="flex items-center gap-3 mb-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 flex-wrap">
       <MapPinned className="h-5 w-5 text-[#1e3a5f] shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-700">This project is still a Lead</p>
+        <p className="text-sm font-medium text-slate-700">This case is still a Lead</p>
         <p className="text-xs text-slate-500">Start the survey to move it into the active workflow.</p>
         {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       </div>

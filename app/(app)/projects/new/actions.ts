@@ -35,8 +35,11 @@ export async function createProject(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
+
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Forbidden" };
+  if (!profile) return { error: "Profile not found" };
+
+  const isAdmin = profile.role === "admin";
 
   const parsed = CreateProjectSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
@@ -51,13 +54,17 @@ export async function createProject(input: {
       bank_metadata: parsed.data.bank_metadata,
       created_by: user.id,
       status: "lead",
+      requires_review: !isAdmin,
+      documents_pending: false,
     })
     .select("id")
     .single();
   if (error) return { error: error.message };
 
   const projectId = data.id;
-  if (parsed.data.assignments && parsed.data.assignments.length > 0) {
+
+  // Only admin can assign staff at creation time
+  if (isAdmin && parsed.data.assignments && parsed.data.assignments.length > 0) {
     const { error: assignError } = await supabase.from("project_assignments").insert(
       parsed.data.assignments.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
     );
