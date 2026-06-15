@@ -19,6 +19,7 @@ import DocumentsPendingToggle from "./documents-pending-toggle";
 import ApproveCaseButton from "./approve-case-button";
 import RevokeStageButton from "./revoke-stage-button";
 import FileManager from "./file-manager";
+import DeleteCaseButton from "./delete-case-button";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -118,11 +119,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               )}
             </div>
             {isAdmin && (
-              <Link href={`/projects/${id}/edit`}>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
-                  <Pencil className="h-3.5 w-3.5" /> Edit Case
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
+                <Link href={`/projects/${id}/edit`}>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
+                    <Pencil className="h-3.5 w-3.5" /> Edit Case
+                  </Button>
+                </Link>
+                <DeleteCaseButton projectId={id} projectName={project.bank_name} />
+              </div>
             )}
           </div>
         </CardContent>
