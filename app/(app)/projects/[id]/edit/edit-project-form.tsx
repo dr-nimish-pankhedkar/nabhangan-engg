@@ -12,13 +12,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updateProjectInfo } from "../actions";
-import { PROPERTY_TYPES } from "@/lib/types";
+import { PROPERTY_TYPES, FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCheck, MapPin } from "lucide-react";
+import { UserCheck, MapPin, ChevronDown } from "lucide-react";
 
 interface StaffMember {
   id: string;
@@ -57,6 +57,43 @@ const schema = z.object({
   loan_required: z.string().optional(),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
+  person_met: z.string().optional(),
+  person_met_mob: z.string().optional(),
+  site_visit_by: z.string().optional(),
+  site_visit_by_mob: z.string().optional(),
+  plot_area: z.string().optional(),
+  carpet_area: z.string().optional(),
+  builtup_area: z.string().optional(),
+  construction_stage: z.string().optional(),
+  use_of_property: z.string().optional(),
+  age_of_building: z.string().optional(),
+  occupied_by: z.string().optional(),
+  lift: z.string().optional(),
+  parking: z.string().optional(),
+  rcc_type: z.string().optional(),
+  road_width: z.string().optional(),
+  total_floors: z.string().optional(),
+  property_floor: z.string().optional(),
+  no_of_rooms: z.string().optional(),
+  no_of_toilets: z.string().optional(),
+  total_flats: z.string().optional(),
+  per_floor_flats: z.string().optional(),
+  facing: z.string().optional(),
+  boundary_east: z.string().optional(),
+  boundary_west: z.string().optional(),
+  boundary_north: z.string().optional(),
+  boundary_south: z.string().optional(),
+  nearby_rate: z.string().optional(),
+  valuation_method: z.string().optional(),
+  plot_area_val: z.string().optional(),
+  plot_rate: z.string().optional(),
+  plot_valuation: z.string().optional(),
+  builtup_area_val: z.string().optional(),
+  builtup_rate: z.string().optional(),
+  builtup_valuation: z.string().optional(),
+  extra_items: z.string().optional(),
+  final_valuation: z.string().optional(),
+  remark: z.string().optional(),
   assignments: z.object({
     survey: z.string().optional(),
     drafting: z.string().optional(),
@@ -80,6 +117,15 @@ function Row({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>;
 }
 
+function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide border-t border-slate-100 pt-3">{title}</p>
+      {children}
+    </div>
+  );
+}
+
 function str(v: unknown): string { return typeof v === "string" ? v : ""; }
 
 export default function EditProjectForm({
@@ -95,6 +141,7 @@ export default function EditProjectForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [showAdditional, setShowAdditional] = useState(false);
   const m = project.bank_metadata || {};
 
   const form = useForm<FormData>({
@@ -122,6 +169,43 @@ export default function EditProjectForm({
       loan_required: str(m.loan_required),
       latitude: project.latitude != null ? String(project.latitude) : "",
       longitude: project.longitude != null ? String(project.longitude) : "",
+      person_met: str(m.person_met),
+      person_met_mob: str(m.person_met_mob),
+      site_visit_by: str(m.site_visit_by),
+      site_visit_by_mob: str(m.site_visit_by_mob),
+      plot_area: str(m.plot_area),
+      carpet_area: str(m.carpet_area),
+      builtup_area: str(m.builtup_area),
+      construction_stage: str(m.construction_stage),
+      use_of_property: str(m.use_of_property),
+      age_of_building: str(m.age_of_building),
+      occupied_by: str(m.occupied_by),
+      lift: str(m.lift),
+      parking: str(m.parking),
+      rcc_type: str(m.rcc_type),
+      road_width: str(m.road_width),
+      total_floors: str(m.total_floors),
+      property_floor: str(m.property_floor),
+      no_of_rooms: str(m.no_of_rooms),
+      no_of_toilets: str(m.no_of_toilets),
+      total_flats: str(m.total_flats),
+      per_floor_flats: str(m.per_floor_flats),
+      facing: str(m.facing),
+      boundary_east: str(m.boundary_east),
+      boundary_west: str(m.boundary_west),
+      boundary_north: str(m.boundary_north),
+      boundary_south: str(m.boundary_south),
+      nearby_rate: str(m.nearby_rate),
+      valuation_method: str(m.valuation_method),
+      plot_area_val: str(m.plot_area_val),
+      plot_rate: str(m.plot_rate),
+      plot_valuation: str(m.plot_valuation),
+      builtup_area_val: str(m.builtup_area_val),
+      builtup_rate: str(m.builtup_rate),
+      builtup_valuation: str(m.builtup_valuation),
+      extra_items: str(m.extra_items),
+      final_valuation: str(m.final_valuation),
+      remark: str(m.remark),
       assignments: {
         survey: currentAssignments.survey || "",
         drafting: currentAssignments.drafting || "",
@@ -152,6 +236,43 @@ export default function EditProjectForm({
       landmark_1: data.landmark_1 || "",
       landmark_2: data.landmark_2 || "",
       loan_required: data.loan_required || "",
+      person_met: data.person_met || "",
+      person_met_mob: data.person_met_mob || "",
+      site_visit_by: data.site_visit_by || "",
+      site_visit_by_mob: data.site_visit_by_mob || "",
+      plot_area: data.plot_area || "",
+      carpet_area: data.carpet_area || "",
+      builtup_area: data.builtup_area || "",
+      construction_stage: data.construction_stage || "",
+      use_of_property: data.use_of_property || "",
+      age_of_building: data.age_of_building || "",
+      occupied_by: data.occupied_by || "",
+      lift: data.lift || "",
+      parking: data.parking || "",
+      rcc_type: data.rcc_type || "",
+      road_width: data.road_width || "",
+      total_floors: data.total_floors || "",
+      property_floor: data.property_floor || "",
+      no_of_rooms: data.no_of_rooms || "",
+      no_of_toilets: data.no_of_toilets || "",
+      total_flats: data.total_flats || "",
+      per_floor_flats: data.per_floor_flats || "",
+      facing: data.facing || "",
+      boundary_east: data.boundary_east || "",
+      boundary_west: data.boundary_west || "",
+      boundary_north: data.boundary_north || "",
+      boundary_south: data.boundary_south || "",
+      nearby_rate: data.nearby_rate || "",
+      valuation_method: data.valuation_method || "",
+      plot_area_val: data.plot_area_val || "",
+      plot_rate: data.plot_rate || "",
+      plot_valuation: data.plot_valuation || "",
+      builtup_area_val: data.builtup_area_val || "",
+      builtup_rate: data.builtup_rate || "",
+      builtup_valuation: data.builtup_valuation || "",
+      extra_items: data.extra_items || "",
+      final_valuation: data.final_valuation || "",
+      remark: data.remark || "",
     };
 
     const assignmentsInput = Object.entries(data.assignments || {})
@@ -237,9 +358,7 @@ export default function EditProjectForm({
                 <FormItem>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select property type" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
@@ -278,7 +397,7 @@ export default function EditProjectForm({
 
             <Section title="Loan Details">
               <FormField control={F.control} name="loan_required" render={({ field }) => (
-                <FormItem><FormLabel>Loan Required</FormLabel><FormControl><Input placeholder="e.g. ₹25,00,000" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Loan Required</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </Section>
 
@@ -296,6 +415,194 @@ export default function EditProjectForm({
                 )} />
               </Row>
             </Section>
+
+            {/* Additional Information (collapsible) */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowAdditional((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+              >
+                <div>
+                  <span className="text-sm font-medium text-slate-700">Additional Information</span>
+                  <span className="text-xs text-slate-400 ml-2">(property details, features, valuation)</span>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform shrink-0 ${showAdditional ? "rotate-180" : ""}`} />
+              </button>
+
+              {showAdditional && (
+                <div className="px-4 pb-4 pt-3 space-y-4 border-t border-slate-100">
+
+                  <SubSection title="Site Contact">
+                    <Row>
+                      <FormField control={F.control} name="person_met" render={({ field }) => (
+                        <FormItem><FormLabel>Person to Meet on Site</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="person_met_mob" render={({ field }) => (
+                        <FormItem><FormLabel>Mobile</FormLabel><FormControl><Input type="tel" {...field} /></FormControl></FormItem>
+                      )} />
+                    </Row>
+                    <Row>
+                      <FormField control={F.control} name="site_visit_by" render={({ field }) => (
+                        <FormItem><FormLabel>Site Visit to be Done By</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="site_visit_by_mob" render={({ field }) => (
+                        <FormItem><FormLabel>Mobile</FormLabel><FormControl><Input type="tel" {...field} /></FormControl></FormItem>
+                      )} />
+                    </Row>
+                  </SubSection>
+
+                  <SubSection title="Property Dimensions">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <FormField control={F.control} name="plot_area" render={({ field }) => (
+                        <FormItem><FormLabel>Plot Area</FormLabel><FormControl><Input placeholder="e.g. 100 sq.mt" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="carpet_area" render={({ field }) => (
+                        <FormItem><FormLabel>Carpet Area</FormLabel><FormControl><Input placeholder="e.g. 75 sq.mt" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="builtup_area" render={({ field }) => (
+                        <FormItem><FormLabel>B/Up Area</FormLabel><FormControl><Input placeholder="e.g. 85 sq.mt" {...field} /></FormControl></FormItem>
+                      )} />
+                    </div>
+                  </SubSection>
+
+                  <SubSection title="Property Details">
+                    <Row>
+                      <FormField control={F.control} name="construction_stage" render={({ field }) => (
+                        <FormItem><FormLabel>Construction Stage</FormLabel><FormControl><Input placeholder="e.g. Completed" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="use_of_property" render={({ field }) => (
+                        <FormItem><FormLabel>Use of Property</FormLabel><FormControl><Input placeholder="e.g. Residential" {...field} /></FormControl></FormItem>
+                      )} />
+                    </Row>
+                    <Row>
+                      <FormField control={F.control} name="age_of_building" render={({ field }) => (
+                        <FormItem><FormLabel>Age of Building</FormLabel><FormControl><Input placeholder="e.g. 5 years" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="occupied_by" render={({ field }) => (
+                        <FormItem><FormLabel>Occupied By</FormLabel><FormControl><Input placeholder="e.g. Owner" {...field} /></FormControl></FormItem>
+                      )} />
+                    </Row>
+                  </SubSection>
+
+                  <SubSection title="Building Features">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <FormField control={F.control} name="total_floors" render={({ field }) => (
+                        <FormItem><FormLabel>Total Floors</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="property_floor" render={({ field }) => (
+                        <FormItem><FormLabel>Property Floor</FormLabel><FormControl><Input placeholder="e.g. 2nd" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="road_width" render={({ field }) => (
+                        <FormItem><FormLabel>Road Width</FormLabel><FormControl><Input placeholder="e.g. 12 ft" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="no_of_rooms" render={({ field }) => (
+                        <FormItem><FormLabel>Rooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="no_of_toilets" render={({ field }) => (
+                        <FormItem><FormLabel>Toilets</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="total_flats" render={({ field }) => (
+                        <FormItem><FormLabel>Total Flats</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="per_floor_flats" render={({ field }) => (
+                        <FormItem><FormLabel>Per Floor Flats</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="lift" render={({ field }) => (
+                        <FormItem><FormLabel>Lift</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                            <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                      <FormField control={F.control} name="parking" render={({ field }) => (
+                        <FormItem><FormLabel>Parking</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                            <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={F.control} name="rcc_type" render={({ field }) => (
+                      <FormItem><FormLabel>Construction Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                          <SelectContent>{RCC_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </SubSection>
+
+                  <SubSection title="Facing &amp; Boundaries">
+                    <FormField control={F.control} name="facing" render={({ field }) => (
+                      <FormItem><FormLabel>Facing</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select direction" /></SelectTrigger></FormControl>
+                          <SelectContent>{FACING_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                    <div className="grid grid-cols-2 gap-3">
+                      {(["east", "west", "north", "south"] as const).map((dir) => (
+                        <FormField key={dir} control={F.control} name={`boundary_${dir}` as any} render={({ field }) => (
+                          <FormItem><FormLabel className="capitalize">{dir}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                        )} />
+                      ))}
+                    </div>
+                  </SubSection>
+
+                  <SubSection title="Valuation Summary">
+                    <Row>
+                      <FormField control={F.control} name="nearby_rate" render={({ field }) => (
+                        <FormItem><FormLabel>Nearby / Recommended Rate</FormLabel><FormControl><Input placeholder="e.g. ₹5,000/sq.ft" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="valuation_method" render={({ field }) => (
+                        <FormItem><FormLabel>Method Adopted</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger></FormControl>
+                            <SelectContent>{VALUATION_METHODS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                    </Row>
+                    <div className="grid grid-cols-3 gap-2">
+                      <FormField control={F.control} name="plot_area_val" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs">Plot Area</FormLabel><FormControl><Input placeholder="area" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="plot_rate" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs">× Rate (₹)</FormLabel><FormControl><Input placeholder="rate" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="plot_valuation" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs">= Rs.</FormLabel><FormControl><Input placeholder="value" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="builtup_area_val" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs">B/Up Area</FormLabel><FormControl><Input placeholder="area" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="builtup_rate" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs">× Rate (₹)</FormLabel><FormControl><Input placeholder="rate" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="builtup_valuation" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs">= Rs.</FormLabel><FormControl><Input placeholder="value" {...field} /></FormControl></FormItem>
+                      )} />
+                    </div>
+                    <Row>
+                      <FormField control={F.control} name="extra_items" render={({ field }) => (
+                        <FormItem><FormLabel>Extra Items / Services (Rs.)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="final_valuation" render={({ field }) => (
+                        <FormItem><FormLabel className="font-semibold text-[#1e3a5f]">Final Valuation Say (Rs.)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                      )} />
+                    </Row>
+                    <FormField control={F.control} name="remark" render={({ field }) => (
+                      <FormItem><FormLabel>Remark</FormLabel><FormControl><textarea className="w-full min-h-[72px] border border-slate-200 rounded-md px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20" {...field} /></FormControl></FormItem>
+                    )} />
+                  </SubSection>
+
+                </div>
+              )}
+            </div>
 
             {/* Staff Assignments */}
             <div className="border border-slate-200 rounded-lg p-4 space-y-3">
@@ -331,7 +638,6 @@ export default function EditProjectForm({
                 <p className="text-sm text-red-600 font-medium">Error: {error}</p>
               </div>
             )}
-
             <div className="flex gap-3">
               <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Saving…" : "Save Changes"}
