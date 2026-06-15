@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { uploadProjectFile } from "@/lib/storage";
-import { logFileRecord, saveSiteVisitReport, submitSiteVisitReport, updateCaseInfoFromSurvey } from "./actions";
+import { logFileRecord, saveSiteVisitReport, submitSiteVisitReport, updateCaseInfoFromSurvey, logTime } from "./actions";
 import { FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,10 +20,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Camera, Locate, X, AlertTriangle, Pencil, LockKeyhole } from "lucide-react";
+import { CheckCircle, Camera, Locate, X, AlertTriangle, Pencil, LockKeyhole, Clock } from "lucide-react";
 
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_SIZE_MB = 5;
+
+const timeSchema = z.object({
+  hours_spent: z.string().min(1).refine((v) => parseFloat(v) > 0, "Must be > 0"),
+  notes: z.string().optional(),
+});
 
 const schema = z.object({
   visit_date: z.string().optional(),
@@ -231,6 +236,9 @@ export default function SurveyStageClient({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [saveDraftMsg, setSaveDraftMsg] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [timeLogged, setTimeLogged] = useState(false);
+  const [showTimePrompt, setShowTimePrompt] = useState(false);
+  const timeForm = useForm({ resolver: zodResolver(timeSchema), defaultValues: { hours_spent: "", notes: "" } });
   const [locating, setLocating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -302,12 +310,23 @@ export default function SurveyStageClient({
     else setSaveDraftMsg("Draft saved.");
   }
 
-  async function handleSubmit(data: FormData) {
+  async function doSubmit(data: FormData) {
     setSaveDraftMsg(null);
     setSubmitError(null);
     const result = await submitSiteVisitReport({ projectId, data: data as Record<string, string> });
     if (result.error) setSubmitError(result.error);
     else router.push(`/projects/${projectId}`);
+  }
+
+  async function handleSubmit(data: FormData) {
+    if (!timeLogged) { setShowTimePrompt(true); return; }
+    await doSubmit(data);
+  }
+
+  async function onTimeSubmit(tData: any) {
+    const result = await logTime({ projectId, userId, stage: "survey", hours_spent: parseFloat(tData.hours_spent), notes: tData.notes || null });
+    if (result.error) setSubmitError(result.error);
+    else setTimeLogged(true);
   }
 
   const F = form;
@@ -764,6 +783,28 @@ export default function SurveyStageClient({
           </CardContent>
         </Card>
 
+        {/* ── Log Time ── */}
+        <Card className="border-slate-200">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Log Time (optional)</CardTitle></CardHeader>
+          <CardContent>
+            {timeLogged ? (
+              <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle className="h-4 w-4" />Time logged</div>
+            ) : (
+              <Form {...timeForm}>
+                <form onSubmit={timeForm.handleSubmit(onTimeSubmit)} className="space-y-4">
+                  <FormField control={timeForm.control} name="hours_spent" render={({ field }) => (
+                    <FormItem><FormLabel>Hours Spent</FormLabel><FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={timeForm.control} name="notes" render={({ field }) => (
+                    <FormItem><FormLabel>Notes</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
+                </form>
+              </Form>
+            )}
+          </CardContent>
+        </Card>
+
         {/* ── Actions ── */}
         {submitError && (
           <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">
@@ -773,6 +814,24 @@ export default function SurveyStageClient({
         {saveDraftMsg && (
           <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 rounded px-4 py-2">
             <CheckCircle className="h-4 w-4" /> {saveDraftMsg}
+          </div>
+        )}
+
+        {showTimePrompt && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800">Log your hours first? (optional)</p>
+              <p className="text-xs text-amber-600 mt-0.5">Time tracking helps with reports, but you can skip it.</p>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowTimePrompt(false)}>
+                  Go Back &amp; Log Time
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => { setShowTimePrompt(false); form.handleSubmit(doSubmit)(); }}>
+                  Skip &amp; Submit
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -13,6 +13,37 @@ import { z } from "zod";
 const UUIDSchema = z.string().uuid();
 const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]);
 
+const TimeLogSchema = z.object({
+  projectId: z.string().uuid(),
+  userId: z.string().uuid(),
+  stage: StageSchema,
+  hours_spent: z.number().positive(),
+  notes: z.string().nullable(),
+});
+
+export async function logTime(input: {
+  projectId: string;
+  userId: string;
+  stage: string;
+  hours_spent: number;
+  notes: string | null;
+}): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  const parsed = TimeLogSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+  const { error } = await supabase.from("time_logs").insert({
+    project_id: parsed.data.projectId,
+    user_id: parsed.data.userId,
+    stage: parsed.data.stage,
+    hours_spent: parsed.data.hours_spent,
+    notes: parsed.data.notes,
+  });
+  if (error) return { error: error.message };
+  return {};
+}
+
 const LogFileSchema = z.object({
   projectId: z.string().uuid(),
   stage: StageSchema,

@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Upload, Download, Camera, ExternalLink, LockKeyhole } from "lucide-react";
+import { CheckCircle, Upload, Download, Camera, ExternalLink, LockKeyhole, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const timeSchema = z.object({
@@ -52,6 +52,7 @@ export default function DraftingClient({
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [timeLogged, setTimeLogged] = useState(false);
+  const [showTimePrompt, setShowTimePrompt] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -82,10 +83,15 @@ export default function DraftingClient({
     else setTimeLogged(true);
   }
 
-  async function handleAdvance() {
+  async function doAdvance() {
     const result = await advanceStage(projectId, "checking");
     if (result.error) setError(result.error);
     else router.push(`/projects/${projectId}`);
+  }
+
+  async function handleAdvance() {
+    if (!timeLogged) { setShowTimePrompt(true); return; }
+    await doAdvance();
   }
 
   const sv = siteVisitData;
@@ -253,6 +259,24 @@ export default function DraftingClient({
       </Card>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {showTimePrompt && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-800">Log your hours first? (optional)</p>
+            <p className="text-xs text-amber-600 mt-0.5">Time tracking helps with reports, but you can skip it.</p>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowTimePrompt(false)}>
+                Go Back &amp; Log Time
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => { setShowTimePrompt(false); doAdvance(); }}>
+                Skip &amp; Submit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Button onClick={handleAdvance} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
         Mark Drafting Complete → Checking
