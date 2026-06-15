@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Upload, Download, Camera, ExternalLink } from "lucide-react";
+import { CheckCircle, Upload, Download, Camera, ExternalLink, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const timeSchema = z.object({
@@ -39,11 +39,13 @@ export default function DraftingClient({
   userId,
   surveyPhotos,
   siteVisitData,
+  isLocked,
 }: {
   projectId: string;
   userId: string;
   surveyPhotos: SurveyPhoto[];
   siteVisitData: Record<string, string> | null;
+  isLocked: boolean;
 }) {
   const router = useRouter();
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -87,6 +89,18 @@ export default function DraftingClient({
   }
 
   const sv = siteVisitData;
+
+  if (isLocked) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4">
+        <LockKeyhole className="h-5 w-5 text-green-600 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-green-700">Stage Submitted & Locked</p>
+          <p className="text-xs text-green-600/80">This stage has been submitted. Contact your admin to make changes.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

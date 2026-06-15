@@ -15,18 +15,17 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
 
   const { id } = await params;
 
-  const [projectRes, svrRes, photosRes] = await Promise.all([
+  const [projectRes, svrRes, photosRes, submissionRes] = await Promise.all([
     supabase.from("projects").select("*, profiles(full_name)").eq("id", id).single(),
     supabase.from("site_visit_reports").select("*").eq("project_id", id).maybeSingle(),
     supabase.from("project_files").select("id, file_name, file_path, uploaded_at").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
+    supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "survey").maybeSingle(),
   ]);
 
   if (!projectRes.data) notFound();
 
   const existingPhotos = photosRes.data || [];
-
-  // Generate signed URLs server-side so the client can display file names only
-  // (thumbnails would need separate signed URLs — kept as file list for simplicity)
+  const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
 
   return (
     <div className="max-w-2xl">
@@ -37,6 +36,7 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
         project={projectRes.data}
         existingReport={svrRes.data?.data || null}
         existingPhotos={existingPhotos}
+        isLocked={isLocked}
       />
     </div>
   );

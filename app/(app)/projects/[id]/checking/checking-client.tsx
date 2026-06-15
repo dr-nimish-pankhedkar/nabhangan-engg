@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const timeSchema = z.object({
@@ -23,7 +23,7 @@ const timeSchema = z.object({
   notes: z.string().optional(),
 });
 
-export default function CheckingClient({ projectId, userId }: { projectId: string; userId: string }) {
+export default function CheckingClient({ projectId, userId, isLocked }: { projectId: string; userId: string; isLocked: boolean }) {
   const router = useRouter();
   const [timeLogged, setTimeLogged] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +39,18 @@ export default function CheckingClient({ projectId, userId }: { projectId: strin
     const result = await advanceStage(projectId, "print");
     if (result.error) setError(result.error);
     else router.push(`/projects/${projectId}`);
+  }
+
+  if (isLocked) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4">
+        <LockKeyhole className="h-5 w-5 text-green-600 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-green-700">Stage Submitted & Locked</p>
+          <p className="text-xs text-green-600/80">This stage has been submitted. Contact your admin to make changes.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

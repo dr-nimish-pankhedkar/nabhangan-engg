@@ -114,3 +114,17 @@ export async function approveCase(projectId: string): Promise<{ error?: string }
   if (dbError) return { error: dbError.message };
   return {};
 }
+
+export async function revokeStageSubmission(projectId: string, stage: string): Promise<{ error?: string }> {
+  const { supabase, user, error } = await requireAdmin();
+  if (error) return { error };
+  if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
+  if (!StatusSchema.safeParse(stage).success) return { error: "Invalid stage" };
+  const { error: dbError } = await supabase
+    .from("stage_submissions")
+    .update({ revoked_by: user!.id, revoked_at: new Date().toISOString() })
+    .eq("project_id", projectId)
+    .eq("stage", stage);
+  if (dbError) return { error: dbError.message };
+  return {};
+}

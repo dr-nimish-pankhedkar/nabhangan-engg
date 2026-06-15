@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Camera, Locate, X, AlertTriangle, Pencil } from "lucide-react";
+import { CheckCircle, Camera, Locate, X, AlertTriangle, Pencil, LockKeyhole } from "lucide-react";
 
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_SIZE_MB = 5;
@@ -121,12 +121,14 @@ export default function SurveyStageClient({
   project,
   existingReport,
   existingPhotos,
+  isLocked,
 }: {
   projectId: string;
   userId: string;
   project: any;
   existingReport: Record<string, string> | null;
   existingPhotos: { id: string; file_name: string; file_path: string; uploaded_at: string }[];
+  isLocked: boolean;
 }) {
   const router = useRouter();
   const m = project.bank_metadata || {};
@@ -309,6 +311,18 @@ export default function SurveyStageClient({
   }
 
   const F = form;
+
+  if (isLocked) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4">
+        <LockKeyhole className="h-5 w-5 text-green-600 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-green-700">Survey Submitted & Locked</p>
+          <p className="text-xs text-green-600/80">This survey has been submitted. Contact your admin to re-open for corrections.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>

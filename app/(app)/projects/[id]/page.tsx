@@ -11,12 +11,13 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, PartyPopper, AlertTriangle, Pencil } from "lucide-react";
+import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, PartyPopper, AlertTriangle, Pencil, LockKeyhole, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StartSurveyButton from "./start-survey-button";
 import AdvanceStageButton from "./advance-stage-button";
 import DocumentsPendingToggle from "./documents-pending-toggle";
 import ApproveCaseButton from "./approve-case-button";
+import RevokeStageButton from "./revoke-stage-button";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -64,17 +65,21 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const progressPct = Math.round((currentStageIdx / (STAGE_ORDER.length - 1)) * 100);
   const isComplete = project.status === "dispatch";
 
-  const [filesRes, responsesRes, timelogsRes, assignmentsRes] = await Promise.all([
+  const [filesRes, responsesRes, timelogsRes, assignmentsRes, submissionsRes] = await Promise.all([
     supabase.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
     supabase.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
     supabase.from("time_logs").select("*, profiles(full_name)").eq("project_id", id).order("logged_at", { ascending: false }),
     supabase.from("project_assignments").select("*, profiles(full_name, role)").eq("project_id", id),
+    supabase.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by").eq("project_id", id),
   ]);
 
   const files = filesRes.data || [];
   const responses = responsesRes.data || [];
   const timelogs = timelogsRes.data || [];
   const assignments = assignmentsRes.data || [];
+  const submissions = submissionsRes.data || [];
+  const submissionsMap: Record<string, any> = {};
+  submissions.forEach((s: any) => { submissionsMap[s.stage] = s; });
 
   const nextStageIdx = currentStageIdx + 1;
   const nextStage = nextStageIdx < STAGE_ORDER.length ? STAGE_ORDER[nextStageIdx] : null;
@@ -240,22 +245,42 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           return (
             <Card key={stage.value} className="border-slate-200">
               <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
-                  <Badge className={STATUS_COLORS[stage.value]}>{stage.label}</Badge>
-                  {stageAssignees.length > 0 ? (
-                    <span className="text-xs text-slate-500 font-normal flex items-center gap-1 flex-wrap">
-                      Assigned to:
-                      {stageAssignees.map((a: any) => (
-                        <Badge key={a.id} variant="outline" className="text-xs font-normal text-[#1e3a5f] border-[#1e3a5f]/30">
-                          {a.profiles?.full_name}
-                        </Badge>
-                      ))}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-400 font-normal">No one assigned yet</span>
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
+                    <Badge className={STATUS_COLORS[stage.value]}>{stage.label}</Badge>
+                    {stageAssignees.length > 0 ? (
+                      <span className="text-xs text-slate-500 font-normal flex items-center gap-1 flex-wrap">
+                        Assigned to:
+                        {stageAssignees.map((a: any) => (
+                          <Badge key={a.id} variant="outline" className="text-xs font-normal text-[#1e3a5f] border-[#1e3a5f]/30">
+                            {a.profiles?.full_name}
+                          </Badge>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-normal">No one assigned yet</span>
+                    )}
+                    {!hasContent && <span className="text-xs text-slate-400 font-normal">· No activity yet</span>}
+                  </CardTitle>
+                  {isAdmin && submissionsMap[stage.value] && (
+                    <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                      {!submissionsMap[stage.value].revoked_by ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                            <LockKeyhole className="h-2.5 w-2.5" />
+                            Locked
+                          </span>
+                          <RevokeStageButton projectId={id} stage={stage.value} />
+                        </>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          Revoked — awaiting re-submission
+                        </span>
+                      )}
+                    </div>
                   )}
-                  {!hasContent && <span className="text-xs text-slate-400 font-normal">· No activity yet</span>}
-                </CardTitle>
+                </div>
               </CardHeader>
               {hasContent && (
                 <CardContent className="px-4 pb-4 pt-0 space-y-2">

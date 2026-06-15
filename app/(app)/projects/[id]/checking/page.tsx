@@ -13,10 +13,12 @@ export default async function CheckingPage({ params }: { params: Promise<{ id: s
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { id } = await params;
+  const { data: submission } = await supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "checking").maybeSingle();
+  const isLocked = !!submission && !submission.revoked_by;
   return (
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Checking Stage</h1>
-      <CheckingClient projectId={id} userId={user.id} />
+      <CheckingClient projectId={id} userId={user.id} isLocked={isLocked} />
     </div>
   );
 }

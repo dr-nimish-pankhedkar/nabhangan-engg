@@ -82,6 +82,14 @@ export async function advanceStage(projectId: string, newStatus: ProjectStatus):
   if (!user) return { error: "Unauthenticated" };
   if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   if (!StageSchema.safeParse(newStatus).success) return { error: "Invalid status" };
+  await supabase.from("stage_submissions").upsert({
+    project_id: projectId,
+    stage: "print",
+    submitted_by: user.id,
+    submitted_at: new Date().toISOString(),
+    revoked_by: null,
+    revoked_at: null,
+  }, { onConflict: "project_id,stage" });
   const { error } = await supabase.from("projects").update({ status: newStatus }).eq("id", projectId);
   if (error) return { error: error.message };
   return {};

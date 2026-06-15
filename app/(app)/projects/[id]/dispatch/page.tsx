@@ -13,10 +13,12 @@ export default async function DispatchPage({ params }: { params: Promise<{ id: s
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { id } = await params;
+  const { data: submission } = await supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "dispatch").maybeSingle();
+  const isLocked = !!submission && !submission.revoked_by;
   return (
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Dispatch</h1>
-      <DispatchClient projectId={id} userId={user.id} />
+      <DispatchClient projectId={id} userId={user.id} isLocked={isLocked} />
     </div>
   );
 }

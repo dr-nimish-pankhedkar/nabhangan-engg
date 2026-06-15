@@ -17,28 +17,20 @@ export default async function DraftingPage({ params }: { params: Promise<{ id: s
 
   const { id } = await params;
 
-  // Load survey photos and generate signed URLs (1-hour validity)
-  const { data: surveyPhotos } = await supabase
-    .from("project_files")
-    .select("id, file_name, file_path, file_type, uploaded_at, profiles(full_name)")
-    .eq("project_id", id)
-    .eq("stage", "survey")
-    .like("file_type", "image/%")
-    .order("uploaded_at");
+  const [surveyPhotosRes, siteVisitReportRes, submissionRes] = await Promise.all([
+    supabase.from("project_files").select("id, file_name, file_path, file_type, uploaded_at, profiles(full_name)").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
+    supabase.from("site_visit_reports").select("data").eq("project_id", id).maybeSingle(),
+    supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "drafting").maybeSingle(),
+  ]);
 
   const photosWithUrls = await Promise.all(
-    (surveyPhotos || []).map(async (photo: any) => {
+    (surveyPhotosRes.data || []).map(async (photo: any) => {
       const { data } = await supabase.storage.from(BUCKET).createSignedUrl(photo.file_path, 3600);
       return { ...photo, signedUrl: data?.signedUrl || null };
     })
   );
 
-  // Also load the site visit report summary for reference
-  const { data: siteVisitReport } = await supabase
-    .from("site_visit_reports")
-    .select("data")
-    .eq("project_id", id)
-    .maybeSingle();
+  const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
 
   return (
     <div className="max-w-2xl">
@@ -47,7 +39,8 @@ export default async function DraftingPage({ params }: { params: Promise<{ id: s
         projectId={id}
         userId={user.id}
         surveyPhotos={photosWithUrls}
-        siteVisitData={siteVisitReport?.data || null}
+        siteVisitData={siteVisitReportRes.data?.data || null}
+        isLocked={isLocked}
       />
     </div>
   );

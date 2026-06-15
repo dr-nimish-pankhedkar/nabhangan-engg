@@ -15,14 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CheckCircle, PartyPopper } from "lucide-react";
+import { CheckCircle, PartyPopper, LockKeyhole } from "lucide-react";
 
 const timeSchema = z.object({
   hours_spent: z.string().min(1).refine((v) => parseFloat(v) > 0, "Must be > 0"),
   notes: z.string().optional(),
 });
 
-export default function DispatchClient({ projectId, userId }: { projectId: string; userId: string }) {
+export default function DispatchClient({ projectId, userId, isLocked }: { projectId: string; userId: string; isLocked: boolean }) {
   const [dispatched, setDispatched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const form = useForm({ resolver: zodResolver(timeSchema), defaultValues: { hours_spent: "", notes: "" } });
@@ -31,6 +31,18 @@ export default function DispatchClient({ projectId, userId }: { projectId: strin
     const result = await logTime({ projectId, userId, stage: "dispatch", hours_spent: parseFloat(data.hours_spent), notes: data.notes || null });
     if (result.error) setError(result.error);
     else setDispatched(true);
+  }
+
+  if (isLocked) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4">
+        <LockKeyhole className="h-5 w-5 text-green-600 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-green-700">Case Dispatched & Locked</p>
+          <p className="text-xs text-green-600/80">Dispatch has been recorded. Contact admin to re-open if changes are needed.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
