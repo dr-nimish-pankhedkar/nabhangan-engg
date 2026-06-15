@@ -8,11 +8,13 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_COLORS, ProjectStatus } from "@/lib/types";
+import { FEATURES } from "@/lib/features";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import AssignmentForm from "./assignment-form";
 import TaskRequestActions from "./task-request-actions";
 import RemoveAssignmentButton from "./remove-assignment-button";
+import GenerateLinkForm from "./generate-link-form";
 import { cn } from "@/lib/utils";
 
 const STAGE_SHORT: Record<string, string> = {
@@ -159,6 +161,17 @@ export default async function AssignmentsPage() {
           </div>
         )}
       </div>
+
+      {/* Third-party survey link generator — premium feature */}
+      {FEATURES.thirdPartyLinks && (
+        <div className="max-w-xl mb-8">
+          <h2 className="text-sm font-semibold text-slate-600 mb-1">Generate Third-Party Survey Link</h2>
+          <p className="text-xs text-slate-400 mb-3">
+            Creates a one-time, time-limited link for an external surveyor to fill the site visit report directly — no account required.
+          </p>
+          <GenerateLinkForm projects={projects} />
+        </div>
+      )}
 
       {/* Pending task requests */}
       {pendingRequests.length > 0 && (
