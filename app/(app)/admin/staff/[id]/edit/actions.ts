@@ -6,7 +6,7 @@
 
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const UpdateStaffSchema = z.object({
@@ -20,6 +20,7 @@ const UpdateStaffSchema = z.object({
   doj: z.string().optional(),
   address: z.string().max(500).optional(),
   emergency_contact: z.string().max(200).optional(),
+  email: z.string().email().optional(),
 });
 
 export async function updateStaffMember(
@@ -35,6 +36,7 @@ export async function updateStaffMember(
     doj?: string;
     address?: string;
     emergency_contact?: string;
+    email?: string;
   }
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
@@ -64,5 +66,14 @@ export async function updateStaffMember(
     })
     .eq("id", userId);
   if (error) return { error: error.message };
+
+  if (parsed.data.email) {
+    const adminClient = await createAdminClient();
+    const { error: authError } = await adminClient.auth.admin.updateUserById(userId, {
+      email: parsed.data.email,
+    });
+    if (authError) return { error: `Profile saved but email update failed: ${authError.message}` };
+  }
+
   return {};
 }

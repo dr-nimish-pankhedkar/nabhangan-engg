@@ -30,11 +30,12 @@ const schema = z.object({
   doj: z.string().optional(),
   address: z.string().optional(),
   emergency_contact: z.string().optional(),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
 });
 
 type FormData = z.infer<typeof schema>;
 
-export default function EditStaffForm({ staff }: { staff: Profile }) {
+export default function EditStaffForm({ staff, currentEmail }: { staff: Profile; currentEmail: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +52,7 @@ export default function EditStaffForm({ staff }: { staff: Profile }) {
       doj: staff.doj || "",
       address: staff.address || "",
       emergency_contact: staff.emergency_contact || "",
+      email: currentEmail,
     },
   });
 
@@ -59,6 +61,7 @@ export default function EditStaffForm({ staff }: { staff: Profile }) {
     const result = await updateStaffMember(staff.id, {
       ...data,
       salary: data.salary ? parseFloat(data.salary) : null,
+      email: data.email && data.email !== currentEmail ? data.email : undefined,
     });
     if (result.error) setError(result.error);
     else router.push(`/admin/staff/${staff.id}`);
@@ -118,6 +121,16 @@ export default function EditStaffForm({ staff }: { staff: Profile }) {
             <FormField control={form.control} name="emergency_contact" render={({ field }) => (
               <FormItem><FormLabel>Emergency Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
+            <div className="border-t border-slate-200 pt-4">
+              <p className="text-xs text-slate-500 mb-3">Login credentials — changing email updates the staff member&apos;s login ID.</p>
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Login Email</FormLabel>
+                  <FormControl><Input type="email" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Saving…" : "Save Changes"}

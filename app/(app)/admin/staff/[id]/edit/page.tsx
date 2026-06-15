@@ -5,7 +5,7 @@
  */
 
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import EditStaffForm from "./edit-staff-form";
 
 export default async function EditStaffPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,10 +20,14 @@ export default async function EditStaffPage({ params }: { params: Promise<{ id: 
   const { data: staff } = await supabase.from("profiles").select("*").eq("id", id).single();
   if (!staff) notFound();
 
+  const adminClient = await createAdminClient();
+  const { data: authUser } = await adminClient.auth.admin.getUserById(id);
+  const currentEmail = authUser?.user?.email || "";
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Edit: {staff.full_name}</h1>
-      <EditStaffForm staff={staff} />
+      <EditStaffForm staff={staff} currentEmail={currentEmail} />
     </div>
   );
 }
