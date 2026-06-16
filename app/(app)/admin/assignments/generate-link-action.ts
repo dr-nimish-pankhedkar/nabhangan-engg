@@ -35,6 +35,43 @@ export async function generateThirdPartyToken(input: {
   ).toISOString();
 
   const admin = await createAdminClient();
+
+  // Guard: project must currently be in the survey stage
+  const { data: project } = await admin
+    .from("projects")
+    .select("status")
+    .eq("id", parsed.data.project_id)
+    .single();
+
+  if (!project) return { error: "Project not found." };
+  if (project.status !== "survey") {
+    return { error: "This project is not in the Survey stage. Survey links can only be generated while the project is at Survey stage." };
+  }
+
+  // Guard: no non-revoked stage submission exists (staff or prior third-party)
+  const { data: existing } = await admin
+    .from("stage_submissions")
+    .select("id, revoked_by")
+    .eq("project_id", parsed.data.project_id)
+    .eq("stage", "survey")
+    .maybeSingle();
+
+  if (existing && !existing.revoked_by) {
+    return { error: "Survey has already been submitted for this project. Revoke the Survey stage first before generating a new link." };
+  }
+
+  // Guard: no prior third-party token already used for this project
+  const { data: usedToken } = await admin
+    .from("third_party_tokens")
+    .select("id")
+    .eq("project_id", parsed.data.project_id)
+    .not("used_at", "is", null)
+    .maybeSingle();
+
+  if (usedToken) {
+    return { error: "A third-party survey has already been submitted for this project. Revoke the Survey stage first before generating a new link." };
+  }
+
   const { data, error } = await admin
     .from("third_party_tokens")
     .insert({

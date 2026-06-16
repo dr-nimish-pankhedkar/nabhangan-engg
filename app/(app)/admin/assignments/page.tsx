@@ -38,13 +38,15 @@ export default async function AssignmentsPage() {
   if (profile?.role !== "admin") redirect("/dashboard");
 
   const admin = await createAdminClient();
-  const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes] = await Promise.all([
+  const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes, surveySubmissionsRes] = await Promise.all([
     supabase.from("projects").select("id, bank_name, status").neq("status", "dispatch").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
     admin.from("third_party_tokens").select("project_id, surveyor_name").is("used_at", null).gt("expires_at", new Date().toISOString()),
     supabase.from("other_assignments").select("id, user_id, task_description, assigned_at, profiles(full_name)").eq("is_active", true).order("assigned_at", { ascending: false }),
+    // Projects with a non-revoked survey submission (staff-submitted) — these can't get new TP links
+    supabase.from("stage_submissions").select("project_id").eq("stage", "survey").is("revoked_by", null),
   ]);
 
   const projects = projectsRes.data || [];
@@ -52,6 +54,8 @@ export default async function AssignmentsPage() {
   const assignments = assignmentsRes.data || [];
   const pendingRequests = requestsRes.data || [];
   const otherAssignments = (otherRes.data || []) as any[];
+  // Project IDs where survey is locked (non-revoked submission exists)
+  const surveySubmittedIds = new Set((surveySubmissionsRes.data || []).map((r: any) => r.project_id));
 
   // Build matrix: matrix[project_id][user_id] = {stage, id}[]
   const matrix: Record<string, Record<string, { stage: string; id: string }[]>> = {};
@@ -199,7 +203,7 @@ export default async function AssignmentsPage() {
           <p className="text-xs text-slate-400 mb-3">
             Creates a one-time, time-limited link for an external surveyor to fill the site visit report directly — no account required.
           </p>
-          <GenerateLinkForm projects={projects} />
+          <GenerateLinkForm projects={projects} surveySubmittedIds={[...surveySubmittedIds]} />
         </div>
       )}
 

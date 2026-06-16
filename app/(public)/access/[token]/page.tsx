@@ -47,6 +47,26 @@ export default async function ThirdPartyAccessPage({
     );
   }
 
+  // Guard: check if the survey stage is already locked (submitted and not revoked)
+  const { data: stageSub } = await admin
+    .from("stage_submissions")
+    .select("id, revoked_by")
+    .eq("project_id", tokenRow.project_id)
+    .eq("stage", "survey")
+    .maybeSingle();
+
+  if (stageSub && !stageSub.revoked_by) {
+    return (
+      <div className="max-w-lg mx-auto mt-12 text-center space-y-2">
+        <h1 className="text-xl font-semibold text-slate-800">Survey Already Submitted</h1>
+        <p className="text-sm text-slate-500">
+          The survey for this project has been submitted and locked by the office team.
+          This link is no longer active. Contact the office if corrections are needed.
+        </p>
+      </div>
+    );
+  }
+
   const [projectRes, svrRes, photosRes] = await Promise.all([
     admin.from("projects").select("*").eq("id", tokenRow.project_id).single(),
     admin

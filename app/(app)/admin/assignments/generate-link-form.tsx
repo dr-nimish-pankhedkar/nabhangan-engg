@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link2, Copy, CheckCircle } from "lucide-react";
+import { Link2, Copy, CheckCircle, Lock } from "lucide-react";
 
 const EXPIRY_OPTIONS = [
   { label: "2 hours", value: 2 },
@@ -25,8 +25,10 @@ const EXPIRY_OPTIONS = [
 
 export default function GenerateLinkForm({
   projects,
+  surveySubmittedIds = [],
 }: {
   projects: { id: string; bank_name: string; status: string }[];
+  surveySubmittedIds?: string[];
 }) {
   const [projectId, setProjectId] = useState("");
   const [surveyorName, setSurveyorName] = useState("");
@@ -80,12 +82,31 @@ export default function GenerateLinkForm({
               <SelectValue placeholder="Select a project…" />
             </SelectTrigger>
             <SelectContent>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.bank_name}
-                  <span className="ml-2 text-xs text-slate-400">({p.status})</span>
-                </SelectItem>
-              ))}
+              {projects.map((p) => {
+                const notSurveyStage = p.status !== "survey";
+                const surveyLocked = surveySubmittedIds.includes(p.id);
+                const isDisabled = notSurveyStage || surveyLocked;
+                const lockReason = surveyLocked
+                  ? "Survey submitted — revoke to re-enable"
+                  : notSurveyStage
+                  ? `Not at Survey stage (${p.status})`
+                  : null;
+                return (
+                  <SelectItem key={p.id} value={p.id} disabled={isDisabled}>
+                    <span className={isDisabled ? "text-slate-400" : undefined}>
+                      {p.bank_name}
+                    </span>
+                    {isDisabled ? (
+                      <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-slate-400">
+                        <Lock className="h-3 w-3" />
+                        {lockReason}
+                      </span>
+                    ) : (
+                      <span className="ml-2 text-xs text-slate-400">({p.status})</span>
+                    )}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

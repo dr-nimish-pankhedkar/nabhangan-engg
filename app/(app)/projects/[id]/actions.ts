@@ -155,11 +155,21 @@ export async function revokeStageSubmission(projectId: string, stage: string): P
   if (error) return { error };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   if (!StatusSchema.safeParse(stage).success) return { error: "Invalid stage" };
+
+  // Revoke the stage submission record (if one exists)
   const { error: dbError } = await supabase
     .from("stage_submissions")
     .update({ revoked_by: user!.id, revoked_at: new Date().toISOString() })
     .eq("project_id", projectId)
     .eq("stage", stage);
   if (dbError) return { error: dbError.message };
+
+  // Revert project status back to this stage so it can be re-done
+  const { error: statusError } = await supabase
+    .from("projects")
+    .update({ status: stage })
+    .eq("id", projectId);
+  if (statusError) return { error: statusError.message };
+
   return {};
 }
