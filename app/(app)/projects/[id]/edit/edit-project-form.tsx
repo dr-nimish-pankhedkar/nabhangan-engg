@@ -159,6 +159,7 @@ export default function EditProjectForm({
   currentAssignments: Record<string, string>;
 }) {
   const router = useRouter();
+  const m = project.bank_metadata || {};
   const [error, setError] = useState<string | null>(null);
   const [showAdditional, setShowAdditional] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>((m.custom_fields as CustomField[]) || []);
@@ -167,7 +168,6 @@ export default function EditProjectForm({
   const [tpHours, setTpHours] = useState(24);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const m = project.bank_metadata || {};
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
