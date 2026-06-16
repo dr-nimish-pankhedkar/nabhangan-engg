@@ -72,5 +72,18 @@ export async function submitThirdPartyReport(
     .eq("id", tokenRow.id);
   if (tokenError) return { error: tokenError.message };
 
+  // Auto-advance project from survey → rate_verification
+  const { data: proj } = await admin
+    .from("projects")
+    .select("status")
+    .eq("id", tokenRow.project_id)
+    .single();
+  if (proj?.status === "survey") {
+    await admin
+      .from("projects")
+      .update({ status: "rate_verification" })
+      .eq("id", tokenRow.project_id);
+  }
+
   return {};
 }

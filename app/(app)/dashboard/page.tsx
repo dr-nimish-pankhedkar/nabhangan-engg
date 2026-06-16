@@ -14,10 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 
 function getGreeting() {
-  // Convert server UTC time to IST (UTC+5:30)
-  const now = new Date();
-  const istMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + 330;
-  const istHour = Math.floor((istMinutes % 1440) / 60);
+  const istHour = new Date(Date.now() + 330 * 60 * 1000).getUTCHours();
 
   if (istHour >= 5 && istHour < 12) return { salutation: "Good Morning", emoji: "☀️", tagline: "A fresh start — let's move some cases forward today." };
   if (istHour >= 12 && istHour < 17) return { salutation: "Good Afternoon", emoji: "🌤️", tagline: "Keep the momentum going — every step counts." };
@@ -387,7 +384,7 @@ export default async function DashboardPage() {
   }
 
   // Staff dashboard
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 7);
 
   const [assignmentsRes, timelogsRes, attendanceRes, requestsRes] = await Promise.all([
     supabase.from("project_assignments").select("*, projects(id, bank_name, project_address, status)").eq("user_id", user.id).order("assigned_at", { ascending: false }),

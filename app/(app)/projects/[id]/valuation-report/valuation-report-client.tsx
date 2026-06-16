@@ -59,7 +59,7 @@ function FieldGrid({ children, cols = 2 }: { children: React.ReactNode; cols?: n
 
 export default function ValuationReportClient({ project, bankMetadata: bm, report: r, photos, creatorName }: Props) {
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
-  const printDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+  const printDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
   const caseCode = bm.code_no || "—";
   const validPhotos = photos.filter((p) => p.signedUrl && !imgErrors.has(p.id));
 

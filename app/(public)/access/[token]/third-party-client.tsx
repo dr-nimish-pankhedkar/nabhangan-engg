@@ -181,6 +181,7 @@ export default function ThirdPartySurveyClient({
       (pos) => {
         form.setValue("precise_latitude", String(pos.coords.latitude.toFixed(6)));
         form.setValue("precise_longitude", String(pos.coords.longitude.toFixed(6)));
+        setSubmitError(null);
         setLocating(false);
       },
       (err) => { setSubmitError("Could not get location: " + err.message); setLocating(false); },

@@ -12,13 +12,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updateProjectInfo } from "../actions";
+import { generateThirdPartyToken } from "@/app/(app)/admin/assignments/generate-link-action";
+import { FEATURES } from "@/lib/features";
 import { PROPERTY_TYPES, FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCheck, MapPin, ChevronDown } from "lucide-react";
+import { UserCheck, MapPin, ChevronDown, Link2, Copy, CheckCircle } from "lucide-react";
+
+const TP_VALUE = "__third_party__";
+const EXPIRY_OPTS = [
+  { label: "6 hours", value: 6 },
+  { label: "12 hours", value: 12 },
+  { label: "24 hours", value: 24 },
+  { label: "48 hours", value: 48 },
+  { label: "72 hours", value: 72 },
+];
 
 interface StaffMember {
   id: string;
@@ -148,6 +159,10 @@ export default function EditProjectForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showAdditional, setShowAdditional] = useState(false);
+  const [tpName, setTpName] = useState("");
+  const [tpHours, setTpHours] = useState(24);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const m = project.bank_metadata || {};
 
   const form = useForm<FormData>({
@@ -284,8 +299,10 @@ export default function EditProjectForm({
       remark: data.remark || "",
     };
 
+    const surveyIsThirdParty = data.assignments?.survey === TP_VALUE;
+
     const assignmentsInput = Object.entries(data.assignments || {})
-      .filter(([, uid]) => uid && uid !== "none" && uid.length > 0)
+      .filter(([, uid]) => uid && uid !== "none" && uid !== TP_VALUE && uid.length > 0)
       .map(([stage, uid]) => ({ stage, user_id: uid as string }));
 
     const result = await updateProjectInfo(projectId, {
@@ -299,9 +316,25 @@ export default function EditProjectForm({
 
     if (result.error) {
       setError(result.error);
-    } else {
-      router.push(`/projects/${projectId}`);
+      return;
     }
+
+    if (surveyIsThirdParty && tpName.trim()) {
+      const tpResult = await generateThirdPartyToken({
+        project_id: projectId,
+        expiry_hours: tpHours,
+        surveyor_name: tpName.trim(),
+      });
+      if (tpResult.error) {
+        setError(tpResult.error);
+        return;
+      }
+      const link = `${window.location.origin}/access/${tpResult.token}`;
+      setGeneratedLink(link);
+      return;
+    }
+
+    router.push(`/projects/${projectId}`);
   }
 
   const F = form;
@@ -628,6 +661,11 @@ export default function EditProjectForm({
                         <FormControl><SelectTrigger className="text-sm"><SelectValue placeholder="No staff assigned" /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="none">No staff assigned</SelectItem>
+                          {stage.value === "survey" && FEATURES.thirdPartyLinks && (
+                            <SelectItem value={TP_VALUE}>
+                              <span className="text-purple-700 font-medium">Third Party (generate link)</span>
+                            </SelectItem>
+                          )}
                           {staff.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.full_name}{s.designation && <span className="text-slate-400 ml-1">— {s.designation}</span>}
@@ -636,10 +674,64 @@ export default function EditProjectForm({
                         </SelectContent>
                       </Select>
                     </div>
+                    {stage.value === "survey" && field.value === TP_VALUE && (
+                      <div className="ml-[92px] mt-2 rounded-lg border border-purple-200 bg-purple-50 p-3 space-y-2">
+                        <p className="text-xs font-medium text-purple-800">Third Party Surveyor Details</p>
+                        <div className="flex gap-2 flex-wrap">
+                          <Input
+                            placeholder="Surveyor / Firm name"
+                            value={tpName}
+                            onChange={(e) => setTpName(e.target.value)}
+                            className="text-sm h-8 flex-1 min-w-[160px]"
+                          />
+                          <select
+                            value={tpHours}
+                            onChange={(e) => setTpHours(Number(e.target.value))}
+                            className="text-sm h-8 border border-slate-200 rounded-md px-2 bg-white"
+                          >
+                            {EXPIRY_OPTS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
                   </FormItem>
                 )} />
               ))}
             </div>
+
+            {/* Generated third-party link */}
+            {generatedLink && (
+              <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 space-y-2">
+                <p className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+                  <Link2 className="h-4 w-4" /> Third Party Survey Link Generated
+                </p>
+                <p className="text-xs text-purple-600">Share this link with the surveyor. Case saved successfully.</p>
+                <div className="flex gap-2 mt-1">
+                  <code className="flex-1 text-xs bg-white border border-purple-200 rounded px-2 py-1.5 break-all text-slate-700">
+                    {generatedLink}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-purple-300 text-purple-700 hover:bg-purple-100"
+                    onClick={() => { navigator.clipboard.writeText(generatedLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                  >
+                    {copied ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-1 bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+                  onClick={() => router.push(`/projects/${projectId}`)}
+                >
+                  Go to Case
+                </Button>
+              </div>
+            )}
 
             {error && (
               <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">

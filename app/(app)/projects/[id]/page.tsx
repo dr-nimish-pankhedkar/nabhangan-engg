@@ -429,7 +429,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                               </td>
                               <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
                                 {(() => {
-                                  const ts = sub?.submitted_at || (stage.value === "survey" ? surveyThirdPartySubmittedAt : null);
+                                  const ts = stage.value === "lead"
+                                    ? project.created_at
+                                    : (sub?.submitted_at || (stage.value === "survey" ? surveyThirdPartySubmittedAt : null));
                                   return ts
                                     ? new Date(ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })
                                     : <span className="text-slate-300">—</span>;
