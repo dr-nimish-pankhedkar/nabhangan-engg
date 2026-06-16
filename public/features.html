@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nabhangan Engineers — Feature Overview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 40px auto;
+      background: white;
+      padding: 52px 56px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      border-bottom: 2.5px solid #1e3a5f;
+      margin-bottom: 36px;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo {
+      height: 48px;
+      width: auto;
+    }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e3a5f;
+      letter-spacing: -0.3px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+    .doc-meta {
+      text-align: right;
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.7;
+    }
+    .doc-meta strong { color: #475569; }
+
+    /* Title block */
+    .title-block {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .title-block h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e3a5f;
+      letter-spacing: -0.4px;
+    }
+    .title-block p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    /* Intro */
+    .intro {
+      background: #f1f5f9;
+      border-left: 3px solid #1e3a5f;
+      border-radius: 0 6px 6px 0;
+      padding: 14px 18px;
+      font-size: 12.5px;
+      color: #475569;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 40px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .section-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .icon-owner { background: #1e3a5f; }
+    .icon-staff { background: #0f766e; }
+    .icon-third { background: #7e22ce; }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e3a5f;
+    }
+    .section-title.teal { color: #0f766e; }
+    .section-title.purple { color: #7e22ce; }
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    /* Feature groups */
+    .feature-groups {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .feature-groups.single { grid-template-columns: 1fr; }
+
+    .group {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .group-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: white;
+      padding: 8px 14px;
+    }
+    .group-title.navy { background: #1e3a5f; }
+    .group-title.teal { background: #0f766e; }
+    .group-title.purple { background: #7e22ce; }
+    .group-title.slate { background: #475569; }
+
+    .group ul {
+      list-style: none;
+      padding: 10px 14px 12px;
+    }
+    .group ul li {
+      font-size: 12px;
+      color: #334155;
+      padding: 4px 0;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+    .group ul li:last-child { border-bottom: none; }
+    .group ul li::before {
+      content: "✓";
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .group.navy li::before { color: #1e3a5f; }
+    .group.teal li::before { color: #0f766e; }
+    .group.purple li::before { color: #7e22ce; }
+    .group.slate li::before { color: #475569; }
+
+    /* Workflow diagram */
+    .workflow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 28px 0;
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+    .wf-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .wf-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #1e3a5f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .wf-label {
+      font-size: 9.5px;
+      color: #64748b;
+      text-align: center;
+      font-weight: 500;
+      max-width: 60px;
+    }
+    .wf-arrow {
+      width: 24px;
+      height: 1px;
+      background: #94a3b8;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 36px 0;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 18px;
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body { background: white; }
+      .page { box-shadow: none; margin: 0; padding: 36px 44px; }
+      @page { size: A4; margin: 12mm; }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 24px 20px; margin: 0; }
+      .feature-groups { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .doc-meta { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <img src="/logo.png" alt="Nabhangan Engineers" class="logo" />
+      <div>
+        <div class="brand-name">Nabhangan Engineers</div>
+        <div class="brand-sub">Project &amp; Workflow Tracker</div>
+      </div>
+    </div>
+    <div class="doc-meta">
+      <div><strong>Document:</strong> Feature Overview</div>
+      <div><strong>Version:</strong> Free Trial</div>
+      <div><strong>Valid till:</strong> 26 June 2026</div>
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div class="title-block">
+    <h1>Platform Features &amp; Capabilities</h1>
+    <p>A complete overview of all features available to Owners and Staff</p>
+  </div>
+
+  <!-- Intro -->
+  <div class="intro">
+    Nabhangan Engineers is a purpose-built digital workflow platform for property valuation and site survey management. It tracks every case from initial lead through survey, drafting, checking, printing, scanning, and final dispatch — with role-based access ensuring each team member sees only what is relevant to them.
+  </div>
+
+  <!-- Workflow -->
+  <div class="workflow">
+    <div class="wf-step"><div class="wf-dot">1</div><div class="wf-label">Lead</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">2</div><div class="wf-label">Survey</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">3</div><div class="wf-label">Rate Verif.</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">4</div><div class="wf-label">Drafting</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">5</div><div class="wf-label">Checking</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">6</div><div class="wf-label">Print</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">7</div><div class="wf-label">Scan</div></div>
+    <div class="wf-arrow"></div>
+    <div class="wf-step"><div class="wf-dot">8</div><div class="wf-label">Dispatch</div></div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- OWNER SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon icon-owner">👤</div>
+      <div class="section-title">Owner / Administrator</div>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="feature-groups">
+
+      <div class="group navy">
+        <div class="group-title navy">Dashboard &amp; Overview</div>
+        <ul>
+          <li>Live case count across all 8 workflow stages</li>
+          <li>Realtime Occupancy — shows staff on active work only (not queued stages)</li>
+          <li>Third-party surveyor tracking with active link status</li>
+          <li>Greeting personalised to Indian Standard Time</li>
+          <li>Quick navigation to all admin modules</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Case Management</div>
+        <ul>
+          <li>Create new cases with bank, owner &amp; property details</li>
+          <li>Edit all case information at any time</li>
+          <li>Delete cases (admin only)</li>
+          <li>Mark documents as pending with visible warning</li>
+          <li>Approve cases flagged for review before they enter the pipeline</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Staff Assignment</div>
+        <ul>
+          <li>Assign any staff member to any of the 7 workflow stages</li>
+          <li>Reassign or remove assignments via Edit Case</li>
+          <li>Assignments panel with dedicated stage-wise allocation</li>
+          <li>Generate secure third-party survey links (see below)</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Stage Control</div>
+        <ul>
+          <li>Advance case to the next stage once current stage is complete</li>
+          <li>Revoke a submitted stage and send it back for correction</li>
+          <li>Auto-advance when third-party survey is submitted</li>
+          <li>Visual progress stepper showing current position</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Activity &amp; Timeline</div>
+        <ul>
+          <li>Activity History: files, checklists, time logs &amp; third-party submissions per stage</li>
+          <li>Project Timeline table: assigned staff, hours, and submission timestamps</li>
+          <li>Lead creation date shown in timeline</li>
+          <li>All timestamps in Indian Standard Time (IST)</li>
+          <li>Download Timeline as CSV</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Reports &amp; Documents</div>
+        <ul>
+          <li>Site Survey Report — printable PDF with Nabhangan logo</li>
+          <li>Covers bank info, owner, property, site visit, GPS, dimensions, valuation</li>
+          <li>GPS coordinates from surveyor or project data</li>
+          <li>Site photos embedded in report</li>
+          <li>Signature strip and copyright footer</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Admin Modules</div>
+        <ul>
+          <li>Staff directory — add, edit, activate/deactivate staff</li>
+          <li>Checklist Templates — create quality-control checklists per stage</li>
+          <li>Assignments view — manage all stage assignments in one place</li>
+          <li>Task Requests — approve or reject staff requests</li>
+        </ul>
+      </div>
+
+      <div class="group navy">
+        <div class="group-title navy">Account &amp; Security</div>
+        <ul>
+          <li>Secure login with Supabase authentication</li>
+          <li>Change password with current password verification</li>
+          <li>Role-based access — admin sees all, staff sees own work</li>
+          <li>Session-protected routes; unauthenticated access redirected</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- STAFF SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon icon-staff">👷</div>
+      <div class="section-title teal">Staff Members</div>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="feature-groups">
+
+      <div class="group teal">
+        <div class="group-title teal">Personal Dashboard</div>
+        <ul>
+          <li>View all cases currently assigned to them</li>
+          <li>Total hours logged across all cases</li>
+          <li>Attendance summary for the current month</li>
+          <li>Pending task requests at a glance</li>
+          <li>Greeting personalised to IST time of day</li>
+        </ul>
+      </div>
+
+      <div class="group teal">
+        <div class="group-title teal">Case Work</div>
+        <ul>
+          <li>Access assigned case detail page</li>
+          <li>Fill and submit site visit report (Survey stage)</li>
+          <li>Submit checklist responses for their stage</li>
+          <li>Upload work files (photos, documents) to a case</li>
+          <li>Log hours spent on each stage</li>
+        </ul>
+      </div>
+
+      <div class="group teal">
+        <div class="group-title teal">Survey Form</div>
+        <ul>
+          <li>Full site visit data entry form</li>
+          <li>One-tap GPS location capture</li>
+          <li>Photo uploads (up to 10 photos per case, max 5 MB each)</li>
+          <li>Save draft and return later</li>
+          <li>Final submit locks the form</li>
+        </ul>
+      </div>
+
+      <div class="group teal">
+        <div class="group-title teal">Attendance &amp; Requests</div>
+        <ul>
+          <li>Mark daily attendance (present / absent / half-day)</li>
+          <li>View attendance history for the current month</li>
+          <li>Submit task requests to admin</li>
+          <li>Track status of submitted requests</li>
+        </ul>
+      </div>
+
+      <div class="group teal">
+        <div class="group-title teal">Account</div>
+        <ul>
+          <li>Self-service password change</li>
+          <li>Current password verified before update</li>
+          <li>View own profile details</li>
+        </ul>
+      </div>
+
+      <div class="group teal">
+        <div class="group-title teal">Visibility</div>
+        <ul>
+          <li>Can view case progress and Activity History</li>
+          <li>Can download Site Survey Report PDF</li>
+          <li>Cannot edit case details or delete cases</li>
+          <li>Cannot see other staff's assignments or admin modules</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- THIRD PARTY SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon icon-third">🔗</div>
+      <div class="section-title purple">Third-Party / External Surveyor</div>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="feature-groups single">
+      <div class="group purple">
+        <div class="group-title purple">Secure Link-Based Survey Submission</div>
+        <ul>
+          <li>Admin generates a one-time secure link with configurable expiry (6 h to 72 h)</li>
+          <li>External surveyor accesses the form directly — no login or account required</li>
+          <li>Full site visit form: property details, GPS, measurements, observations</li>
+          <li>One-tap GPS location capture on mobile</li>
+          <li>Photo uploads directly from the field</li>
+          <li>Draft auto-save — surveyor can return and continue before submitting</li>
+          <li>On final submit: case automatically advances to Rate Verification stage</li>
+          <li>Link becomes invalid after submission; used-at timestamp recorded</li>
+          <li>Surveyor name and submission time visible in Activity History and Project Timeline</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>© 2026 Dr. Nimish Pankhedkar, Chemiligence Solutions. All rights reserved.</span>
+    <span>Free Trial — valid till 26 June 2026 · Licensed to Nabhangan Engineers</span>
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:16px 0 32px;font-size:11px;color:#94a3b8;">
+  <button onclick="window.print()" style="background:#1e3a5f;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:12px;cursor:pointer;margin-right:8px;">
+    Print / Save as PDF
+  </button>
+  In the print dialog choose <strong>Save as PDF</strong>.
+</div>
+
+</body>
+</html>
