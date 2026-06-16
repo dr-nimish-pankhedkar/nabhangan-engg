@@ -91,17 +91,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   // Fetch third-party survey token for this project (admin only) — include used/expired so name persists after submission
   let surveyThirdPartyName: string | null = null;
+  let surveyThirdPartySubmittedAt: string | null = null;
   if (isAdmin) {
     const adminClient = await createAdminClient();
     const { data: tpToken } = await adminClient
       .from("third_party_tokens")
-      .select("surveyor_name")
+      .select("surveyor_name, used_at")
       .eq("project_id", id)
       .eq("stage", "survey")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     surveyThirdPartyName = tpToken?.surveyor_name ?? null;
+    surveyThirdPartySubmittedAt = tpToken?.used_at ?? null;
   }
 
   const nextStageIdx = currentStageIdx + 1;
@@ -273,7 +275,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           const stageResponses = responses.filter((r: any) => r.stage === stage.value);
           const stageTimelogs = timelogs.filter((t: any) => t.stage === stage.value);
           const stageAssignees = assignments.filter((a: any) => a.stage === stage.value);
-          const hasContent = stageFiles.length > 0 || stageResponses.length > 0 || stageTimelogs.length > 0;
+          const hasThirdPartySurvey = stage.value === "survey" && !!surveyThirdPartySubmittedAt;
+          const hasContent = stageFiles.length > 0 || stageResponses.length > 0 || stageTimelogs.length > 0 || hasThirdPartySurvey;
 
           return (
             <Card key={stage.value} className="border-slate-200">
@@ -322,6 +325,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               </CardHeader>
               {hasContent && (
                 <CardContent className="px-4 pb-4 pt-0 space-y-2">
+                  {hasThirdPartySurvey && (
+                    <div className="text-xs text-slate-600 bg-purple-50 border border-purple-100 rounded px-3 py-2">
+                      <span className="font-medium text-purple-800">Survey Report submitted</span>
+                      <span className="text-slate-500 ml-2">by Third Party — {surveyThirdPartyName}</span>
+                      <span className="text-slate-400 ml-2">
+                        · {new Date(surveyThirdPartySubmittedAt!).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                  )}
                   {stageFiles.map((f: any) => (
                     <div key={f.id} className="flex items-center justify-between gap-2 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
                       <div className="min-w-0">
