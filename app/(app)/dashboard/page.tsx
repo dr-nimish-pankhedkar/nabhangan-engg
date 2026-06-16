@@ -91,18 +91,13 @@ export default async function DashboardPage() {
 
     const STAGE_ORDER = PROJECT_STAGES.map((s) => s.value);
 
-    // Workload per staff member: any assignment whose stage hasn't been
-    // completed yet (the project's current stage is at or before it) — this
-    // covers both work-in-progress ("active now") and queued/upcoming tasks,
-    // so an assigned-but-not-yet-started task still counts as "occupied".
+    // Only count a staff member as occupied if the project is currently AT their assigned stage.
     const activeAssignmentsByUser = allAssignments.reduce((acc: Record<string, any[]>, a: any) => {
       const status = a.projects?.status;
       if (!status) return acc;
-      const stageIdx = STAGE_ORDER.indexOf(a.stage);
-      const statusIdx = STAGE_ORDER.indexOf(status);
-      if (stageIdx >= statusIdx) {
+      if (a.stage === status) {
         acc[a.user_id] = acc[a.user_id] || [];
-        acc[a.user_id].push({ ...a, isActive: stageIdx === statusIdx });
+        acc[a.user_id].push(a);
       }
       return acc;
     }, {});
@@ -242,10 +237,10 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Staff Occupancy */}
+        {/* Realtime Occupancy */}
         <Card className="border-slate-200">
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-sm text-slate-600">Staff Occupancy</CardTitle>
+            <CardTitle className="text-sm text-slate-600">Realtime Occupancy</CardTitle>
             <Link href="/admin/staff" className="text-xs text-[#1e3a5f] hover:underline flex items-center gap-0.5">
               Manage staff <ChevronRight className="h-3 w-3" />
             </Link>
@@ -257,7 +252,7 @@ export default async function DashboardPage() {
               <>
                 {/* Legend / summary */}
                 <p className="text-xs text-slate-400 mb-2">
-                  Counts every assigned task not yet completed — work currently in progress as well as queued/upcoming stages.
+                  Shows staff occupied in present active work only — stages assigned for future execution are not counted.
                 </p>
                 <div className="flex flex-wrap gap-2 mb-5">
                   <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
@@ -327,19 +322,14 @@ export default async function DashboardPage() {
                                 <Badge
                                   key={i}
                                   variant="outline"
-                                  className={cn(
-                                    "text-xs font-normal",
-                                    a.isActive
-                                      ? "text-[#1e3a5f] border-[#1e3a5f]/30 bg-[#1e3a5f]/5"
-                                      : "text-slate-400 border-dashed"
-                                  )}
+                                  className="text-xs font-normal text-[#1e3a5f] border-[#1e3a5f]/30 bg-[#1e3a5f]/5"
                                 >
-                                  {a.projects?.bank_name} · {a.stage}{!a.isActive && " (queued)"}
+                                  {a.projects?.bank_name} · {a.stage}
                                 </Badge>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-slate-300 mt-2">No tasks assigned</p>
+                            <p className="text-xs text-slate-300 mt-2">No active work right now</p>
                           )}
                         </div>
                       </div>
