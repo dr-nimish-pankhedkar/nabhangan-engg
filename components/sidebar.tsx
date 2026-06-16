@@ -10,7 +10,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderKanban, Users, ClipboardList, UserCheck, LogOut, Menu, X, BarChart2 } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Users, ClipboardList, UserCheck, LogOut, Menu, X, BarChart2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Profile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -93,6 +93,13 @@ export default function Sidebar({ profile }: { profile: Profile }) {
             <p className="text-xs text-blue-200 capitalize">{profile.role.replace("_", " ")}</p>
           </div>
         </div>
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-blue-100 hover:bg-white/10 transition-colors mb-1"
+        >
+          <Settings className="h-4 w-4" />
+          Settings / Password
+        </Link>
         <button
           onClick={handleSignOut}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-blue-100 hover:bg-red-500/20 hover:text-white transition-colors"
