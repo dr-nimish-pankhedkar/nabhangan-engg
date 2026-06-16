@@ -301,7 +301,6 @@ export default function EditProjectForm({
       setError(result.error);
     } else {
       router.push(`/projects/${projectId}`);
-      router.refresh();
     }
   }
 
@@ -309,7 +308,7 @@ export default function EditProjectForm({
 
   return (
     <Card className="border-slate-200">
-      <CardContent className="pt-6">
+      <CardContent className="pt-6 pb-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
