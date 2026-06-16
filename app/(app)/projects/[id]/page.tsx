@@ -330,7 +330,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                       <span className="font-medium text-purple-800">Survey Report submitted</span>
                       <span className="text-slate-500 ml-2">by Third Party — {surveyThirdPartyName}</span>
                       <span className="text-slate-400 ml-2">
-                        · {new Date(surveyThirdPartySubmittedAt!).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        · {new Date(surveyThirdPartySubmittedAt!).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })}
                       </span>
                     </div>
                   )}
@@ -429,7 +429,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                               </td>
                               <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
                                 {sub?.submitted_at
-                                  ? new Date(sub.submitted_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                                  ? new Date(sub.submitted_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })
                                   : <span className="text-slate-300">—</span>}
                                 {sub?.revoked_by && <span className="text-amber-500 ml-1">(revoked)</span>}
                               </td>
