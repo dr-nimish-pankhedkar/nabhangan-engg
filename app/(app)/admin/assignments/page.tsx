@@ -51,7 +51,7 @@ export default async function AssignmentsPage() {
   const staff = staffRes.data || [];
   const assignments = assignmentsRes.data || [];
   const pendingRequests = requestsRes.data || [];
-  const otherAssignments = otherRes.data || [];
+  const otherAssignments = (otherRes.data || []) as any[];
 
   // Build matrix: matrix[project_id][user_id] = {stage, id}[]
   const matrix: Record<string, Record<string, { stage: string; id: string }[]>> = {};
