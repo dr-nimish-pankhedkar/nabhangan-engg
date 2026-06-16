@@ -428,9 +428,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                                 {hoursPerStage[stage.value] ? `${hoursPerStage[stage.value].toFixed(1)}h` : <span className="text-slate-300">—</span>}
                               </td>
                               <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
-                                {sub?.submitted_at
-                                  ? new Date(sub.submitted_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })
-                                  : <span className="text-slate-300">—</span>}
+                                {(() => {
+                                  const ts = sub?.submitted_at || (stage.value === "survey" ? surveyThirdPartySubmittedAt : null);
+                                  return ts
+                                    ? new Date(ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })
+                                    : <span className="text-slate-300">—</span>;
+                                })()}
                                 {sub?.revoked_by && <span className="text-amber-500 ml-1">(revoked)</span>}
                               </td>
                               <td className="py-2.5 px-3 text-right text-slate-500 tabular-nums">
