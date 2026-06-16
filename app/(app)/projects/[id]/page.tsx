@@ -89,7 +89,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const submissionsMap: Record<string, any> = {};
   submissions.forEach((s: any) => { submissionsMap[s.stage] = s; });
 
-  // Fetch active third-party survey token for this project (admin only)
+  // Fetch third-party survey token for this project (admin only) — include used/expired so name persists after submission
   let surveyThirdPartyName: string | null = null;
   if (isAdmin) {
     const adminClient = await createAdminClient();
@@ -98,8 +98,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       .select("surveyor_name")
       .eq("project_id", id)
       .eq("stage", "survey")
-      .is("used_at", null)
-      .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
