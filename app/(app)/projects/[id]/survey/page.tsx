@@ -61,6 +61,7 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
         existingReport={svrRes.data?.data || null}
         existingPhotos={existingPhotos}
         isLocked={isLocked}
+        customFields={(projectRes.data.bank_metadata as any)?.custom_fields || []}
       />
     </div>
   );

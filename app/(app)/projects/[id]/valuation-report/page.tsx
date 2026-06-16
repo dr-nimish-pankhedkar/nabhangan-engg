@@ -47,6 +47,7 @@ export default async function ValuationReportPage({ params }: { params: Promise<
       report={report}
       photos={photos}
       creatorName={(project as any).profiles?.full_name || ""}
+      customFields={(project.bank_metadata as any)?.custom_fields || []}
     />
   );
 }

@@ -120,6 +120,8 @@ function EditField({ label, value, onChange }: { label: string; value: string; o
   );
 }
 
+type CustomField = { key: string; label: string };
+
 export default function SurveyStageClient({
   projectId,
   userId,
@@ -127,6 +129,7 @@ export default function SurveyStageClient({
   existingReport,
   existingPhotos,
   isLocked,
+  customFields = [],
 }: {
   projectId: string;
   userId: string;
@@ -134,6 +137,7 @@ export default function SurveyStageClient({
   existingReport: Record<string, string> | null;
   existingPhotos: { id: string; file_name: string; file_path: string; uploaded_at: string }[];
   isLocked: boolean;
+  customFields?: CustomField[];
 }) {
   const router = useRouter();
   const m = project.bank_metadata || {};
@@ -162,6 +166,9 @@ export default function SurveyStageClient({
   });
   const [savingLead, setSavingLead] = useState(false);
   const [leadSaveError, setLeadSaveError] = useState<string | null>(null);
+  const [customValues, setCustomValues] = useState<Record<string, string>>(
+    customFields.reduce((acc, cf) => ({ ...acc, [cf.key]: existingReport?.[cf.key] || "" }), {})
+  );
 
   function setField(key: string) {
     return (v: string) => setLeadEdits((prev) => ({ ...prev, [key]: v }));
@@ -305,7 +312,7 @@ export default function SurveyStageClient({
   async function handleSaveDraft(data: FormData) {
     setSaveDraftMsg(null);
     setSubmitError(null);
-    const result = await saveSiteVisitReport({ projectId, data: data as Record<string, string> });
+    const result = await saveSiteVisitReport({ projectId, data: { ...(data as Record<string, string>), ...customValues } });
     if (result.error) setSubmitError(result.error);
     else setSaveDraftMsg("Draft saved.");
   }
@@ -313,7 +320,7 @@ export default function SurveyStageClient({
   async function doSubmit(data: FormData) {
     setSaveDraftMsg(null);
     setSubmitError(null);
-    const result = await submitSiteVisitReport({ projectId, data: data as Record<string, string> });
+    const result = await submitSiteVisitReport({ projectId, data: { ...(data as Record<string, string>), ...customValues } });
     if (result.error) setSubmitError(result.error);
     else router.push(`/projects/${projectId}`);
   }
@@ -703,6 +710,24 @@ export default function SurveyStageClient({
             </FormItem>
           )} />
         </Section>
+
+        {/* ── Additional Survey Fields ── */}
+        {customFields.length > 0 && (
+          <Section title="Additional Survey Fields">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {customFields.map((cf) => (
+                <div key={cf.key} className="flex flex-col gap-1">
+                  <label className="text-xs text-slate-500">{cf.label}</label>
+                  <Input
+                    value={customValues[cf.key] || ""}
+                    onChange={(e) => setCustomValues((prev) => ({ ...prev, [cf.key]: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* ── Site Photos ── */}
         <Card className="border-slate-200">

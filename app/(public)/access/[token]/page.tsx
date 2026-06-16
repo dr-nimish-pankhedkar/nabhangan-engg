@@ -83,6 +83,7 @@ export default async function ThirdPartyAccessPage({
         project={projectRes.data}
         existingReport={(svrRes.data as any)?.data || null}
         existingPhotos={photosRes.data || []}
+        customFields={(projectRes.data.bank_metadata as any)?.custom_fields || []}
       />
     </div>
   );

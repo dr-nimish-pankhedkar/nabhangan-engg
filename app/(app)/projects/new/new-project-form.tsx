@@ -20,7 +20,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCheck, Info, MapPin, ChevronDown, Link2, Copy, CheckCircle } from "lucide-react";
+import { UserCheck, Info, MapPin, ChevronDown, Link2, Copy, CheckCircle, Plus, X as XIcon } from "lucide-react";
+
+type CustomField = { key: string; label: string };
 
 const TP_VALUE = "__third_party__";
 
@@ -154,6 +156,8 @@ export default function NewProjectForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showAdditional, setShowAdditional] = useState(false);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [newFieldLabel, setNewFieldLabel] = useState("");
   const [surveyIsThirdParty, setSurveyIsThirdParty] = useState(false);
   const [thirdPartyName, setThirdPartyName] = useState("");
   const [thirdPartyHours, setThirdPartyHours] = useState(48);
@@ -225,6 +229,9 @@ export default function NewProjectForm({
       final_valuation: data.final_valuation || "",
       remark: data.remark || "",
     };
+    if (customFields.length > 0) {
+      (bankMetadata as any).custom_fields = customFields;
+    }
 
     const assignmentsInput = isAdmin
       ? Object.entries(data.assignments || {})
@@ -614,6 +621,60 @@ export default function NewProjectForm({
                     )} />
                   </SubSection>
 
+                </div>
+              )}
+            </div>
+
+            {/* Additional Survey Fields */}
+            <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Plus className="h-4 w-4 text-[#1e3a5f]" />
+                <span className="text-sm font-medium text-slate-700">Additional Survey Fields</span>
+                <span className="text-xs text-slate-400">(optional — project-specific)</span>
+              </div>
+              <p className="text-xs text-slate-400">Add extra fields that the surveyor must fill for this specific project (e.g. Road Condition, Parking Type).</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Field name, e.g. Road Condition"
+                  value={newFieldLabel}
+                  onChange={(e) => setNewFieldLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const label = newFieldLabel.trim();
+                      if (label) {
+                        setCustomFields((prev) => [...prev, { key: `cf_${prev.length}`, label }]);
+                        setNewFieldLabel("");
+                      }
+                    }
+                  }}
+                  className="text-sm flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const label = newFieldLabel.trim();
+                    if (label) {
+                      setCustomFields((prev) => [...prev, { key: `cf_${prev.length}`, label }]);
+                      setNewFieldLabel("");
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+              {customFields.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {customFields.map((cf, i) => (
+                    <span key={cf.key} className="inline-flex items-center gap-1.5 text-xs bg-[#1e3a5f]/10 text-[#1e3a5f] rounded-full px-3 py-1">
+                      {cf.label}
+                      <button type="button" onClick={() => setCustomFields((prev) => prev.filter((_, j) => j !== i))}>
+                        <XIcon className="h-3 w-3 opacity-60 hover:opacity-100" />
+                      </button>
+                    </span>
+                  ))}
                 </div>
               )}
             </div>

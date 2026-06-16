@@ -68,6 +68,8 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+type CustomField = { key: string; label: string };
+
 function str(v: unknown): string { return typeof v === "string" ? v : ""; }
 
 function d(report: Record<string, string> | null, bm: Record<string, unknown>, key: string): string {
@@ -106,12 +108,14 @@ export default function ThirdPartySurveyClient({
   project,
   existingReport,
   existingPhotos,
+  customFields = [],
 }: {
   accessToken: string;
   projectId: string;
   project: any;
   existingReport: Record<string, string> | null;
   existingPhotos: { id: string; file_name: string; file_path: string; uploaded_at: string }[];
+  customFields?: CustomField[];
 }) {
   const m = project.bank_metadata || {};
 
@@ -161,6 +165,9 @@ export default function ThirdPartySurveyClient({
     },
   });
 
+  const [customValues, setCustomValues] = useState<Record<string, string>>(
+    customFields.reduce((acc, cf) => ({ ...acc, [cf.key]: existingReport?.[cf.key] || "" }), {})
+  );
   const [photosUploaded, setPhotosUploaded] = useState<string[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -235,7 +242,7 @@ export default function ThirdPartySurveyClient({
   async function handleSaveDraft(data: FormData) {
     setSaveDraftMsg(null);
     setSubmitError(null);
-    const result = await saveThirdPartyDraft(accessToken, data as Record<string, string>);
+    const result = await saveThirdPartyDraft(accessToken, { ...(data as Record<string, string>), ...customValues });
     if (result.error) setSubmitError(result.error);
     else setSaveDraftMsg("Draft saved.");
   }
@@ -243,7 +250,7 @@ export default function ThirdPartySurveyClient({
   async function handleSubmit(data: FormData) {
     setSaveDraftMsg(null);
     setSubmitError(null);
-    const result = await submitThirdPartyReport(accessToken, data as Record<string, string>);
+    const result = await submitThirdPartyReport(accessToken, { ...(data as Record<string, string>), ...customValues });
     if (result.error) setSubmitError(result.error);
     else setSubmitted(true);
   }
@@ -535,6 +542,24 @@ export default function ThirdPartySurveyClient({
             </FormItem>
           )} />
         </Section>
+
+        {/* Additional Survey Fields */}
+        {customFields.length > 0 && (
+          <Section title="Additional Survey Fields">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {customFields.map((cf) => (
+                <div key={cf.key} className="flex flex-col gap-1">
+                  <label className="text-xs text-slate-500">{cf.label}</label>
+                  <Input
+                    value={customValues[cf.key] || ""}
+                    onChange={(e) => setCustomValues((prev) => ({ ...prev, [cf.key]: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Site Photos */}
         <Card className="border-slate-200">

@@ -10,7 +10,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderKanban, Users, ClipboardList, UserCheck, LogOut, Menu, X, BarChart2, Settings } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Users, UserCheck, LogOut, Menu, X, BarChart2, Settings, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Profile } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -26,7 +26,6 @@ const adminNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Cases", icon: FolderKanban },
   { href: "/admin/staff", label: "Staff", icon: Users },
-  { href: "/admin/checklists", label: "Checklists", icon: ClipboardList },
   { href: "/admin/assignments", label: "Assignments", icon: UserCheck },
   { href: "/admin/reports", label: "Reports", icon: BarChart2 },
 ];

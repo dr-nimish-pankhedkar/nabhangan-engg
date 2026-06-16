@@ -11,12 +11,15 @@ import Link from "next/link";
 import { Printer, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+type CustomField = { key: string; label: string };
+
 interface Props {
   project: any;
   bankMetadata: Record<string, string>;
   report: Record<string, string>;
   photos: { id: string; file_name: string; signedUrl: string | null }[];
   creatorName: string;
+  customFields?: CustomField[];
 }
 
 function v(report: Record<string, string>, bm: Record<string, string>, key: string): string {
@@ -57,7 +60,7 @@ function FieldGrid({ children, cols = 2 }: { children: React.ReactNode; cols?: n
   );
 }
 
-export default function ValuationReportClient({ project, bankMetadata: bm, report: r, photos, creatorName }: Props) {
+export default function ValuationReportClient({ project, bankMetadata: bm, report: r, photos, creatorName, customFields = [] }: Props) {
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
   const printDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
   const caseCode = bm.code_no || "—";
@@ -298,10 +301,32 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
           </>
         )}
 
-        {/* 11 — Site Photos */}
+        {/* Additional Survey Fields */}
+        {customFields.filter((cf) => r[cf.key]).length > 0 && (() => {
+          const n = (r.remark ? 11 : 10);
+          const filledFields = customFields.filter((cf) => r[cf.key]);
+          return (
+            <>
+              <SectionHeading n={n}>Additional Information</SectionHeading>
+              <FieldGrid cols={2}>
+                {filledFields.map((cf) => (
+                  <Field key={cf.key} label={cf.label} value={r[cf.key]} />
+                ))}
+                {filledFields.length % 2 !== 0 && <Field label="" value="" />}
+              </FieldGrid>
+            </>
+          );
+        })()}
+
+        {/* Site Photos */}
         {validPhotos.length > 0 && (
           <>
-            <SectionHeading n={r.remark ? 11 : 10}>Site Photos</SectionHeading>
+            <SectionHeading n={(() => {
+              let n = 10;
+              if (r.remark) n++;
+              if (customFields.filter((cf) => r[cf.key]).length > 0) n++;
+              return n;
+            })()}>Site Photos</SectionHeading>
             <div
               style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}
             >
