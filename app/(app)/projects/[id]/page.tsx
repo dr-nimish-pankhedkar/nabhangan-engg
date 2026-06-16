@@ -136,7 +136,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               <Link href={`/projects/${id}/valuation-report`} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
-                  <Download className="h-3.5 w-3.5" /> Valuation Report PDF
+                  <Download className="h-3.5 w-3.5" /> Site Survey Report
                 </Button>
               </Link>
               {isAdmin && (
