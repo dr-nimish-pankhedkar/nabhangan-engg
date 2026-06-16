@@ -15,6 +15,7 @@ import AssignmentForm from "./assignment-form";
 import TaskRequestActions from "./task-request-actions";
 import RemoveAssignmentButton from "./remove-assignment-button";
 import GenerateLinkForm from "./generate-link-form";
+import OtherAssignmentForm from "./other-assignment-form";
 import { cn } from "@/lib/utils";
 
 const STAGE_SHORT: Record<string, string> = {
@@ -37,18 +38,20 @@ export default async function AssignmentsPage() {
   if (profile?.role !== "admin") redirect("/dashboard");
 
   const admin = await createAdminClient();
-  const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes] = await Promise.all([
+  const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes] = await Promise.all([
     supabase.from("projects").select("id, bank_name, status").neq("status", "dispatch").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
     admin.from("third_party_tokens").select("project_id, surveyor_name").is("used_at", null).gt("expires_at", new Date().toISOString()),
+    supabase.from("other_assignments").select("id, user_id, task_description, assigned_at, profiles(full_name)").eq("is_active", true).order("assigned_at", { ascending: false }),
   ]);
 
   const projects = projectsRes.data || [];
   const staff = staffRes.data || [];
   const assignments = assignmentsRes.data || [];
   const pendingRequests = requestsRes.data || [];
+  const otherAssignments = otherRes.data || [];
 
   // Build matrix: matrix[project_id][user_id] = {stage, id}[]
   const matrix: Record<string, Record<string, { stage: string; id: string }[]>> = {};
@@ -199,6 +202,13 @@ export default async function AssignmentsPage() {
           <GenerateLinkForm projects={projects} />
         </div>
       )}
+
+      {/* Other task assignments */}
+      <div className="max-w-xl mb-8">
+        <h2 className="text-sm font-semibold text-slate-600 mb-1">Other Tasks</h2>
+        <p className="text-xs text-slate-400 mb-3">Assign a general task to a staff member — not linked to any specific case.</p>
+        <OtherAssignmentForm staff={staff} existing={otherAssignments} />
+      </div>
 
       {/* Pending task requests */}
       {pendingRequests.length > 0 && (
