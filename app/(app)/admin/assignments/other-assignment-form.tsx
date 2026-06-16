@@ -14,7 +14,7 @@ import { addOtherAssignment, removeOtherAssignment } from "./other-assignment-ac
 import { X } from "lucide-react";
 
 interface StaffMember { id: string; full_name: string; designation: string | null; }
-interface OtherAssignment { id: string; user_id: string; task_description: string; assigned_at: string; profiles?: { full_name: string } | null; }
+interface OtherAssignment { id: string; user_id: string; task_description: string; assigned_at: string; profiles?: { full_name: string }[] | null; }
 
 export default function OtherAssignmentForm({
   staff,
@@ -87,7 +87,7 @@ export default function OtherAssignmentForm({
           {existing.map((a) => (
             <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-800 truncate">{(a as any).profiles?.full_name}</p>
+                <p className="text-sm font-medium text-slate-800 truncate">{a.profiles?.[0]?.full_name}</p>
                 <p className="text-xs text-slate-500 truncate">{a.task_description}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
