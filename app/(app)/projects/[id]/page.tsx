@@ -108,7 +108,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const nextStageIdx = currentStageIdx + 1;
   const nextStage = nextStageIdx < STAGE_ORDER.length ? STAGE_ORDER[nextStageIdx] : null;
-  const currentStageDone = !isComplete && responses.some((r: any) => r.stage === project.status);
+  const currentStageDone = !isComplete && (
+    responses.some((r: any) => r.stage === project.status) ||
+    (project.status === "survey" && !!surveyThirdPartySubmittedAt)
+  );
 
   return (
     <div className="max-w-3xl">
