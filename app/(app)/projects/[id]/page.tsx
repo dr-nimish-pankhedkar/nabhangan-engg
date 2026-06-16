@@ -135,16 +135,23 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 <p className="text-xs text-slate-400 mt-1">Created by: {(project as any).profiles?.full_name}</p>
               )}
             </div>
-            {isAdmin && (
-              <div className="flex items-center gap-2 flex-wrap shrink-0">
-                <Link href={`/projects/${id}/edit`}>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
-                    <Pencil className="h-3.5 w-3.5" /> Edit Case
-                  </Button>
-                </Link>
-                <DeleteCaseButton projectId={id} projectName={project.bank_name} />
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              <Link href={`/projects/${id}/valuation-report`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
+                  <Download className="h-3.5 w-3.5" /> Valuation Report PDF
+                </Button>
+              </Link>
+              {isAdmin && (
+                <>
+                  <Link href={`/projects/${id}/edit`}>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
+                      <Pencil className="h-3.5 w-3.5" /> Edit Case
+                    </Button>
+                  </Link>
+                  <DeleteCaseButton projectId={id} projectName={project.bank_name} />
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
