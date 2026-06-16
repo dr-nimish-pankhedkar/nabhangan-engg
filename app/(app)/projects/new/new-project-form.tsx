@@ -12,13 +12,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createProject } from "./actions";
+import { generateThirdPartyToken } from "@/app/(app)/admin/assignments/generate-link-action";
+import { FEATURES } from "@/lib/features";
 import { PROPERTY_TYPES, FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCheck, Info, MapPin, ChevronDown } from "lucide-react";
+import { UserCheck, Info, MapPin, ChevronDown, Link2, Copy, CheckCircle } from "lucide-react";
+
+const TP_VALUE = "__third_party__";
+
+const EXPIRY_OPTS = [
+  { label: "6 hours", value: 6 },
+  { label: "12 hours", value: 12 },
+  { label: "24 hours (1 day)", value: 24 },
+  { label: "48 hours (2 days)", value: 48 },
+  { label: "72 hours (3 days)", value: 72 },
+];
 
 interface StaffMember {
   id: string;
@@ -142,6 +154,12 @@ export default function NewProjectForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showAdditional, setShowAdditional] = useState(false);
+  const [surveyIsThirdParty, setSurveyIsThirdParty] = useState(false);
+  const [thirdPartyName, setThirdPartyName] = useState("");
+  const [thirdPartyHours, setThirdPartyHours] = useState(48);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -210,7 +228,7 @@ export default function NewProjectForm({
 
     const assignmentsInput = isAdmin
       ? Object.entries(data.assignments || {})
-          .filter(([, uid]) => uid && uid !== "none" && uid.length > 0)
+          .filter(([, uid]) => uid && uid !== "none" && uid !== TP_VALUE && uid.length > 0)
           .map(([stage, uid]) => ({ stage, user_id: uid as string }))
       : [];
 
@@ -226,12 +244,65 @@ export default function NewProjectForm({
 
     if (result.error) {
       setError(result.error);
+    } else if (surveyIsThirdParty && thirdPartyName.trim() && result.id) {
+      const tpResult = await generateThirdPartyToken({
+        project_id: result.id,
+        expiry_hours: thirdPartyHours,
+        surveyor_name: thirdPartyName.trim(),
+      });
+      if (tpResult.error) {
+        setError(`Case created but link generation failed: ${tpResult.error}`);
+        setCreatedProjectId(result.id);
+      } else if (tpResult.token) {
+        setGeneratedLink(`${window.location.origin}/access/${tpResult.token}`);
+        setCreatedProjectId(result.id);
+      }
     } else {
       router.push(`/projects/${result.id}`);
     }
   }
 
   const F = form;
+
+  if (generatedLink && createdProjectId) {
+    return (
+      <Card className="border-slate-200">
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-center gap-2 text-green-700">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-semibold">Case created successfully!</span>
+          </div>
+          <div className="rounded-md bg-purple-50 border border-purple-200 p-4 space-y-3">
+            <p className="text-sm font-medium text-purple-800 flex items-center gap-1.5">
+              <Link2 className="h-4 w-4" /> Third-party survey link
+            </p>
+            <p className="text-xs text-purple-600">Valid for {thirdPartyHours} hours. Share with {thirdPartyName}.</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-white border border-purple-200 rounded px-2 py-1.5 break-all text-purple-900 font-mono">{generatedLink}</code>
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(generatedLink);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="shrink-0 p-2 rounded border border-purple-200 bg-white hover:bg-purple-50 text-purple-700"
+                title="Copy link"
+              >
+                {copied ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <Button
+            className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+            onClick={() => router.push(`/projects/${createdProjectId}`)}
+          >
+            Go to Project
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-slate-200">
@@ -560,7 +631,13 @@ export default function NewProjectForm({
                     <FormItem>
                       <div className="flex items-center gap-3">
                         <FormLabel className="w-20 text-xs text-slate-500 shrink-0">{stage.label}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select
+                          onValueChange={(v) => {
+                            field.onChange(v);
+                            if (stage.value === "survey") setSurveyIsThirdParty(v === TP_VALUE);
+                          }}
+                          value={field.value || ""}
+                        >
                           <FormControl><SelectTrigger className="text-sm"><SelectValue placeholder="No staff assigned" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="none">No staff assigned</SelectItem>
@@ -569,9 +646,42 @@ export default function NewProjectForm({
                                 {s.full_name}{s.designation && <span className="text-slate-400 ml-1">— {s.designation}</span>}
                               </SelectItem>
                             ))}
+                            {stage.value === "survey" && FEATURES.thirdPartyLinks && (
+                              <SelectItem value={TP_VALUE}>
+                                <span className="flex items-center gap-1.5 text-purple-700">
+                                  <Link2 className="h-3.5 w-3.5 inline" /> Third Party (generate link)
+                                </span>
+                              </SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
+                      {stage.value === "survey" && surveyIsThirdParty && (
+                        <div className="ml-[92px] mt-2 p-3 bg-purple-50 border border-purple-200 rounded-md space-y-2">
+                          <div>
+                            <label className="text-xs font-medium text-slate-600 mb-1 block">
+                              Surveyor Name <span className="text-red-400">*</span>
+                            </label>
+                            <Input
+                              value={thirdPartyName}
+                              onChange={(e) => setThirdPartyName(e.target.value)}
+                              placeholder="e.g. Rajesh Kumar"
+                              className="text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-600 mb-1 block">Link valid for</label>
+                            <Select value={String(thirdPartyHours)} onValueChange={(v) => setThirdPartyHours(Number(v))}>
+                              <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {EXPIRY_OPTS.map((opt) => (
+                                  <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
                     </FormItem>
                   )} />
                 ))}
