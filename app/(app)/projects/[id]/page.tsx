@@ -395,6 +395,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     files.forEach((f: any) => { filesPerStage[f.stage] = (filesPerStage[f.stage] || 0) + 1; });
                     const assignedPerStage: Record<string, string> = {};
                     assignments.forEach((a: any) => { assignedPerStage[a.stage] = (a as any).profiles?.full_name || ""; });
+                    if (surveyThirdPartyName && !assignedPerStage["survey"]) {
+                      assignedPerStage["survey"] = `Third Party — ${surveyThirdPartyName}`;
+                    }
                     const totalHours = Object.values(hoursPerStage).reduce((a, b) => a + b, 0);
 
                     return (
