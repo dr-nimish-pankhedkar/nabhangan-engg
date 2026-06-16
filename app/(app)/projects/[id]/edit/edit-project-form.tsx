@@ -99,9 +99,12 @@ const schema = z.object({
   remark: z.string().optional(),
   assignments: z.object({
     survey: z.string().optional(),
+    rate_verification: z.string().optional(),
     drafting: z.string().optional(),
-    report: z.string().optional(),
-    review: z.string().optional(),
+    checking: z.string().optional(),
+    print: z.string().optional(),
+    scan: z.string().optional(),
+    dispatch: z.string().optional(),
   }).optional(),
 });
 
@@ -211,9 +214,12 @@ export default function EditProjectForm({
       remark: str(m.remark),
       assignments: {
         survey: currentAssignments.survey || "",
+        rate_verification: currentAssignments.rate_verification || "",
         drafting: currentAssignments.drafting || "",
-        report: currentAssignments.report || "",
-        review: currentAssignments.review || "",
+        checking: currentAssignments.checking || "",
+        print: currentAssignments.print || "",
+        scan: currentAssignments.scan || "",
+        dispatch: currentAssignments.dispatch || "",
       },
     },
   });
