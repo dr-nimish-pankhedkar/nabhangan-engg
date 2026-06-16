@@ -21,6 +21,25 @@ const TimeLogSchema = z.object({
   notes: z.string().nullable(),
 });
 
+const LogFileSchema = z.object({
+  projectId: z.string().uuid(),
+  stage: StageSchema,
+  filePath: z.string().min(1).max(1000),
+  fileName: z.string().min(1).max(500),
+  fileType: z.string().max(100),
+  remarks: z.string().max(1000).optional(),
+});
+
+async function requireSurveyAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, projectId: string) {
+  const [{ data: profile }, { data: asgn }] = await Promise.all([
+    supabase.from("profiles").select("role, is_active").eq("id", userId).single(),
+    supabase.from("project_assignments").select("id").eq("project_id", projectId).eq("user_id", userId).eq("stage", "survey").maybeSingle(),
+  ]);
+  if (!profile?.is_active) return "Account is inactive.";
+  if (profile?.role !== "admin" && !asgn) return "You are not assigned to this project's Survey stage.";
+  return null;
+}
+
 export async function logTime(input: {
   projectId: string;
   userId: string;
@@ -33,9 +52,11 @@ export async function logTime(input: {
   if (!user) return { error: "Unauthenticated" };
   const parsed = TimeLogSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
+  const accessError = await requireSurveyAccess(supabase, user.id, parsed.data.projectId);
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("time_logs").insert({
     project_id: parsed.data.projectId,
-    user_id: parsed.data.userId,
+    user_id: user.id,
     stage: parsed.data.stage,
     hours_spent: parsed.data.hours_spent,
     notes: parsed.data.notes,
@@ -43,15 +64,6 @@ export async function logTime(input: {
   if (error) return { error: error.message };
   return {};
 }
-
-const LogFileSchema = z.object({
-  projectId: z.string().uuid(),
-  stage: StageSchema,
-  filePath: z.string().min(1).max(1000),
-  fileName: z.string().min(1).max(500),
-  fileType: z.string().max(100),
-  remarks: z.string().max(1000).optional(),
-});
 
 export async function submitChecklist(input: {
   projectId: string;
@@ -64,11 +76,11 @@ export async function submitChecklist(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
   if (!UUIDSchema.safeParse(input.projectId).success) return { error: "Invalid project ID" };
   if (!UUIDSchema.safeParse(input.templateId).success) return { error: "Invalid template ID" };
   if (!StageSchema.safeParse(input.stage).success) return { error: "Invalid stage" };
-
+  const accessError = await requireSurveyAccess(supabase, user.id, input.projectId);
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("checklist_responses").insert({
     project_id: input.projectId,
     template_id: input.templateId,
@@ -81,12 +93,19 @@ export async function submitChecklist(input: {
   return {};
 }
 
-export async function advanceStage(projectId: string, newStatus: ProjectStatus): Promise<{ error?: string }> {
+export async function advanceStage(projectId: string, _newStatus: ProjectStatus): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
   if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
-  if (!StageSchema.safeParse(newStatus).success) return { error: "Invalid status" };
+
+  const { data: proj } = await supabase.from("projects").select("status").eq("id", projectId).single();
+  if (!proj) return { error: "Project not found." };
+  if (proj.status !== "survey") return { error: "Project is not at the Survey stage." };
+
+  const accessError = await requireSurveyAccess(supabase, user.id, projectId);
+  if (accessError) return { error: accessError };
+
   await supabase.from("stage_submissions").upsert({
     project_id: projectId,
     stage: "survey",
@@ -95,7 +114,7 @@ export async function advanceStage(projectId: string, newStatus: ProjectStatus):
     revoked_by: null,
     revoked_at: null,
   }, { onConflict: "project_id,stage" });
-  const { error } = await supabase.from("projects").update({ status: newStatus }).eq("id", projectId);
+  const { error } = await supabase.from("projects").update({ status: "rate_verification" }).eq("id", projectId);
   if (error) return { error: error.message };
   return {};
 }
@@ -112,10 +131,10 @@ export async function logFileRecord(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
   const parsed = LogFileSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-
+  const accessError = await requireSurveyAccess(supabase, user.id, parsed.data.projectId);
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
@@ -137,14 +156,14 @@ export async function saveSiteVisitReport(input: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
   if (!UUIDSchema.safeParse(input.projectId).success) return { error: "Invalid project ID" };
-
+  const accessError = await requireSurveyAccess(supabase, user.id, input.projectId);
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("site_visit_reports").upsert({
     project_id: input.projectId,
     user_id: user.id,
     data: input.data,
     updated_at: new Date().toISOString(),
   }, { onConflict: "project_id" });
-
   if (error) return { error: error.message };
   return {};
 }
@@ -178,13 +197,13 @@ export async function updateCaseInfoFromSurvey(
   if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   const parsed = UpdateCaseSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-
+  const accessError = await requireSurveyAccess(supabase, user.id, projectId);
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("projects").update({
     bank_name: parsed.data.bank_name,
     project_address: parsed.data.project_address,
     bank_metadata: parsed.data.bank_metadata,
   }).eq("id", projectId);
-
   if (error) return { error: error.message };
   return {};
 }

@@ -6,7 +6,7 @@
 
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
@@ -170,6 +170,15 @@ export async function revokeStageSubmission(projectId: string, stage: string): P
     .update({ status: stage })
     .eq("id", projectId);
   if (statusError) return { error: statusError.message };
+
+  // Reset used_at on any third-party tokens for this project+stage so new links can be generated
+  const admin = await createAdminClient();
+  await admin
+    .from("third_party_tokens")
+    .update({ used_at: null })
+    .eq("project_id", projectId)
+    .eq("stage", stage)
+    .not("used_at", "is", null);
 
   return {};
 }

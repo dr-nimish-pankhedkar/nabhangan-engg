@@ -55,6 +55,29 @@ export async function submitThirdPartyReport(
 
   const admin = await createAdminClient();
 
+  // Guard: project must still be at survey stage
+  const { data: proj } = await admin
+    .from("projects")
+    .select("status")
+    .eq("id", tokenRow.project_id)
+    .single();
+  if (proj?.status !== "survey") {
+    return { error: "This project has moved past the Survey stage. This link is no longer valid." };
+  }
+
+  // Atomically mark token as used — if used_at is already set (concurrent request), this matches 0 rows
+  const { data: claimedToken, error: claimError } = await admin
+    .from("third_party_tokens")
+    .update({ used_at: new Date().toISOString() })
+    .eq("id", tokenRow.id)
+    .is("used_at", null)
+    .select("id");
+  if (claimError) return { error: claimError.message };
+  if (!claimedToken || claimedToken.length === 0) {
+    return { error: "This link has already been submitted." };
+  }
+
+  // Save the report
   const { error: saveError } = await admin.from("site_visit_reports").upsert(
     {
       project_id: tokenRow.project_id,
@@ -66,24 +89,22 @@ export async function submitThirdPartyReport(
   );
   if (saveError) return { error: saveError.message };
 
-  const { error: tokenError } = await admin
-    .from("third_party_tokens")
-    .update({ used_at: new Date().toISOString() })
-    .eq("id", tokenRow.id);
-  if (tokenError) return { error: tokenError.message };
+  // Record stage submission so revocation works uniformly
+  await admin.from("stage_submissions").upsert({
+    project_id: tokenRow.project_id,
+    stage: "survey",
+    submitted_by: tokenRow.created_by,
+    submitted_at: new Date().toISOString(),
+    revoked_by: null,
+    revoked_at: null,
+  }, { onConflict: "project_id,stage" });
 
-  // Auto-advance project from survey → rate_verification
-  const { data: proj } = await admin
+  // Advance project to rate_verification (only if still at survey to guard against a concurrent staff submission)
+  await admin
     .from("projects")
-    .select("status")
+    .update({ status: "rate_verification" })
     .eq("id", tokenRow.project_id)
-    .single();
-  if (proj?.status === "survey") {
-    await admin
-      .from("projects")
-      .update({ status: "rate_verification" })
-      .eq("id", tokenRow.project_id);
-  }
+    .eq("status", "survey");
 
   return {};
 }

@@ -28,6 +28,16 @@ const LogTimeSchema = z.object({
   notes: z.string().max(1000).nullable(),
 });
 
+async function requireStageAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, projectId: string, stage: string) {
+  const [{ data: profile }, { data: asgn }] = await Promise.all([
+    supabase.from("profiles").select("role, is_active").eq("id", userId).single(),
+    supabase.from("project_assignments").select("id").eq("project_id", projectId).eq("user_id", userId).eq("stage", stage).maybeSingle(),
+  ]);
+  if (!profile?.is_active) return "Account is inactive.";
+  if (profile?.role !== "admin" && !asgn) return "You are not assigned to this project stage.";
+  return null;
+}
+
 export async function logFileRecord(input: {
   projectId: string;
   userId: string;
@@ -41,6 +51,8 @@ export async function logFileRecord(input: {
   if (!user) return { error: "Unauthenticated" };
   const parsed = LogFileSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
+  const accessError = await requireStageAccess(supabase, user.id, parsed.data.projectId, "print");
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
@@ -65,6 +77,8 @@ export async function logTime(input: {
   if (!user) return { error: "Unauthenticated" };
   const parsed = LogTimeSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
+  const accessError = await requireStageAccess(supabase, user.id, parsed.data.projectId, "print");
+  if (accessError) return { error: accessError };
   const { error } = await supabase.from("time_logs").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
@@ -76,12 +90,19 @@ export async function logTime(input: {
   return {};
 }
 
-export async function advanceStage(projectId: string, newStatus: ProjectStatus): Promise<{ error?: string }> {
+export async function advanceStage(projectId: string, _newStatus: ProjectStatus): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
   if (!UUIDSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
-  if (!StageSchema.safeParse(newStatus).success) return { error: "Invalid status" };
+
+  const { data: proj } = await supabase.from("projects").select("status").eq("id", projectId).single();
+  if (!proj) return { error: "Project not found." };
+  if (proj.status !== "print") return { error: "Project is not at the Print stage." };
+
+  const accessError = await requireStageAccess(supabase, user.id, projectId, "print");
+  if (accessError) return { error: accessError };
+
   await supabase.from("stage_submissions").upsert({
     project_id: projectId,
     stage: "print",
@@ -90,7 +111,7 @@ export async function advanceStage(projectId: string, newStatus: ProjectStatus):
     revoked_by: null,
     revoked_at: null,
   }, { onConflict: "project_id,stage" });
-  const { error } = await supabase.from("projects").update({ status: newStatus }).eq("id", projectId);
+  const { error } = await supabase.from("projects").update({ status: "scan" }).eq("id", projectId);
   if (error) return { error: error.message };
   return {};
 }
