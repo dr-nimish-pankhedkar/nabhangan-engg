@@ -13,11 +13,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CheckCircle, Eye, EyeOff } from "lucide-react";
 
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="pr-10"
+        required
+      />
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
 export default function ChangePasswordForm() {
-  const [newPassword, setNewPassword] = useState("");
+  const [current, setCurrent] = useState("");
+  const [newPw, setNewPw] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,25 +58,38 @@ export default function ChangePasswordForm() {
     setError(null);
     setSuccess(false);
 
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (newPassword !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
+    if (newPw.length < 6) { setError("New password must be at least 6 characters."); return; }
+    if (newPw !== confirm) { setError("New passwords do not match."); return; }
+    if (current === newPw) { setError("New password must be different from your current password."); return; }
 
     setLoading(true);
     const supabase = createClient();
-    const { error: err } = await supabase.auth.updateUser({ password: newPassword });
+
+    // Get session email to verify old password
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) { setError("Could not retrieve account details."); setLoading(false); return; }
+
+    // Verify current password before updating
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: current,
+    });
+    if (signInErr) {
+      setError("Current password is incorrect.");
+      setLoading(false);
+      return;
+    }
+
+    // Current password verified — update to new password
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPw });
     setLoading(false);
 
-    if (err) {
-      setError(err.message);
+    if (updateErr) {
+      setError(updateErr.message);
     } else {
       setSuccess(true);
-      setNewPassword("");
+      setCurrent("");
+      setNewPw("");
       setConfirm("");
     }
   }
@@ -64,57 +108,20 @@ export default function ChangePasswordForm() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">New Password</label>
-              <div className="relative">
-                <Input
-                  type={showNew ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  tabIndex={-1}
-                >
-                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <label className="text-xs font-medium text-slate-600">Current Password</label>
+              <PasswordInput value={current} onChange={setCurrent} placeholder="Enter your current password" />
             </div>
-
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600">New Password</label>
+              <PasswordInput value={newPw} onChange={setNewPw} placeholder="At least 6 characters" />
+            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600">Confirm New Password</label>
-              <div className="relative">
-                <Input
-                  type={showConfirm ? "text" : "password"}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Re-enter new password"
-                  className="pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  tabIndex={-1}
-                >
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput value={confirm} onChange={setConfirm} placeholder="Re-enter new password" />
             </div>
-
             {error && <p className="text-sm text-red-500">{error}</p>}
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
-            >
-              {loading ? "Updating…" : "Update Password"}
+            <Button type="submit" disabled={loading} className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+              {loading ? "Verifying…" : "Update Password"}
             </Button>
           </form>
         )}
