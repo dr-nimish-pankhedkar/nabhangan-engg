@@ -53,7 +53,7 @@ export default async function DashboardPage() {
         .neq("stage", "dispatch"),
       adminClient
         .from("third_party_tokens")
-        .select("surveyor_name, project_id, projects(bank_name)")
+        .select("surveyor_name, project_id")
         .is("used_at", null)
         .gt("expires_at", new Date().toISOString()),
     ]);
@@ -62,12 +62,19 @@ export default async function DashboardPage() {
     const staff = staffRes.data || [];
     const allAssignments = assignmentsRes.data || [];
 
+    // Build project name lookup from already-fetched projects
+    const projectNameMap: Record<string, string> = {};
+    projects.forEach((p: any) => { projectNameMap[p.id] = p.bank_name; });
+
     // Group third-party tokens by surveyor_name
     const tpGroupMap: Record<string, { count: number; projects: { id: string; bank_name: string }[] }> = {};
     (tpTokensRes.data || []).forEach((t: any) => {
       if (!tpGroupMap[t.surveyor_name]) tpGroupMap[t.surveyor_name] = { count: 0, projects: [] };
       tpGroupMap[t.surveyor_name].count++;
-      if (t.projects) tpGroupMap[t.surveyor_name].projects.push({ id: t.project_id, bank_name: (t.projects as any).bank_name });
+      tpGroupMap[t.surveyor_name].projects.push({
+        id: t.project_id,
+        bank_name: projectNameMap[t.project_id] || t.project_id,
+      });
     });
     const thirdPartyGroups = Object.entries(tpGroupMap).map(([name, data]) => ({ name, ...data }));
 
