@@ -114,14 +114,22 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
           className="flex items-start justify-between gap-4 pb-3 mb-4"
           style={{ borderBottom: "2.5px solid #1e3a5f" }}
         >
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-0.5">
-              Nabhangan Engineers
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Nabhangan Engineers"
+              style={{ height: "52px", width: "auto", objectFit: "contain", flexShrink: 0 }}
+            />
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-0.5">
+                Nabhangan Engineers
+              </div>
+              <h1 className="text-2xl font-extrabold text-[#1e3a5f] leading-tight">
+                Site Survey Report
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">Property Site Survey &amp; Valuation Report</p>
             </div>
-            <h1 className="text-2xl font-extrabold text-[#1e3a5f] leading-tight">
-              VALUATION REPORT
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">Property Valuation &amp; Survey Report</p>
           </div>
           <div className="text-right text-xs text-slate-500 shrink-0 space-y-0.5">
             <p>Date: <strong className="text-slate-700">{printDate}</strong></p>
@@ -177,11 +185,11 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
         <SectionHeading n={4}>Site Visit Details</SectionHeading>
         <FieldGrid cols={2}>
           <Field label="Date of Site Visit" value={r.visit_date} />
-          <Field label="GPS Coordinates" value={
-            r.precise_latitude && r.precise_longitude
-              ? `${r.precise_latitude}, ${r.precise_longitude}`
-              : (project.latitude && project.longitude ? `${project.latitude}, ${project.longitude}` : "")
-          } />
+          <Field label="GPS Coordinates" value={(() => {
+            const lat = r.precise_latitude || (project.latitude != null ? String(project.latitude) : "");
+            const lng = r.precise_longitude || (project.longitude != null ? String(project.longitude) : "");
+            return lat && lng ? `${lat}, ${lng}` : lat || lng;
+          })()} />
           <Field label="Person Met on Site" value={v(r, bm, "person_met")} />
           <Field label="Person Met Mobile" value={v(r, bm, "person_met_mob")} />
           <Field label="Site Visit Conducted By" value={v(r, bm, "site_visit_by")} />
