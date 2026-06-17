@@ -17,12 +17,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Upload, LockKeyhole, Clock } from "lucide-react";
+import { CheckCircle, Upload, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ReferenceFiles, { type RefFile } from "../reference-files";
 
-const timeSchema = z.object({
-  hours_spent: z.string().min(1).refine((v) => parseFloat(v) > 0, "Must be > 0"),
+const submitSchema = z.object({
+  hours_spent: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -31,11 +31,10 @@ export default function RateVerificationClient({ projectId, userId, isLocked, re
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [timeLogged, setTimeLogged] = useState(false);
-  const [showTimePrompt, setShowTimePrompt] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const form = useForm({ resolver: zodResolver(timeSchema), defaultValues: { hours_spent: "", notes: "" } });
+  const form = useForm({ resolver: zodResolver(submitSchema), defaultValues: { hours_spent: "", notes: "" } });
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -56,21 +55,21 @@ export default function RateVerificationClient({ projectId, userId, isLocked, re
     }
   }
 
-  async function onTimeSubmit(data: any) {
-    const result = await logTime({ projectId, userId, stage: "rate_verification", hours_spent: parseFloat(data.hours_spent), notes: data.notes || null });
-    if (result.error) setError(result.error);
-    else setTimeLogged(true);
-  }
-
-  async function doAdvance() {
-    const result = await advanceStage(projectId, "drafting");
-    if (result.error) setError(result.error);
-    else router.push(`/projects/${projectId}`);
-  }
-
-  async function handleAdvance() {
-    if (!timeLogged) { setShowTimePrompt(true); return; }
-    await doAdvance();
+  async function handleSubmit(data: { hours_spent?: string; notes?: string }) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const hours = parseFloat(data.hours_spent || "");
+      if (hours > 0) {
+        const timeResult = await logTime({ projectId, userId, stage: "rate_verification", hours_spent: hours, notes: data.notes || null });
+        if (timeResult.error) { setError(timeResult.error); return; }
+      }
+      const result = await advanceStage(projectId, "drafting");
+      if (result.error) setError(result.error);
+      else router.push(`/projects/${projectId}`);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (isLocked) {
@@ -100,52 +99,30 @@ export default function RateVerificationClient({ projectId, userId, isLocked, re
         </CardContent>
       </Card>
 
-      {!showTimePrompt && (
-        <Card className="border-slate-200">
-          <CardHeader className="pb-3"><CardTitle className="text-sm">Log Time</CardTitle></CardHeader>
-          <CardContent>
-            {timeLogged ? (
-              <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle className="h-4 w-4" />Time logged</div>
-            ) : (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onTimeSubmit)} className="space-y-4">
-                  <FormField control={form.control} name="hours_spent" render={({ field }) => (
-                    <FormItem><FormLabel>Hours Spent</FormLabel><FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={form.control} name="notes" render={({ field }) => (
-                    <FormItem><FormLabel>Notes</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
-                </form>
-              </Form>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      {showTimePrompt && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">Log your hours first? (optional)</p>
-            <p className="text-xs text-amber-600 mt-0.5">Time tracking helps with reports, but you can skip it.</p>
-            <div className="flex gap-2 mt-3 flex-wrap">
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowTimePrompt(false)}>
-                Go Back &amp; Log Time
-              </Button>
-              <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => { setShowTimePrompt(false); doAdvance(); }}>
-                Skip &amp; Submit
-              </Button>
-            </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField control={form.control} name="hours_spent" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hours Spent <span className="text-xs font-normal text-slate-400">(optional)</span></FormLabel>
+                <FormControl><Input type="number" step="0.5" min="0.5" placeholder="e.g. 2.5" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes <span className="text-xs font-normal text-slate-400">(optional)</span></FormLabel>
+                <FormControl><Input placeholder="Any remarks…" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
           </div>
-        </div>
-      )}
-
-      <Button onClick={handleAdvance} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
-        Rate Verification Complete → Drafting
-      </Button>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <Button type="submit" disabled={submitting} className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">
+            {submitting ? "Submitting…" : "Rate Verification Complete → Drafting"}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 }

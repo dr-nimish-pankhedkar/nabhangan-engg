@@ -83,14 +83,6 @@ export async function logTime(input: {
     notes: parsed.data.notes,
   });
   if (error) return { error: error.message };
-  await supabase.from("stage_submissions").upsert({
-    project_id: parsed.data.projectId,
-    stage: "dispatch",
-    submitted_by: user.id,
-    submitted_at: new Date().toISOString(),
-    revoked_by: null,
-    revoked_at: null,
-  }, { onConflict: "project_id,stage" });
   return {};
 }
 
