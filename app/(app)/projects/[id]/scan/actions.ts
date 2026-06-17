@@ -6,7 +6,7 @@
 
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
@@ -99,7 +99,8 @@ export async function advanceStage(projectId: string, _newStatus: ProjectStatus)
   const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };
 
-  await supabase.from("stage_submissions").upsert({
+  const admin = await createAdminClient();
+  await admin.from("stage_submissions").upsert({
     project_id: projectId,
     stage: "scan",
     submitted_by: user.id,
@@ -107,7 +108,7 @@ export async function advanceStage(projectId: string, _newStatus: ProjectStatus)
     revoked_by: null,
     revoked_at: null,
   }, { onConflict: "project_id,stage" });
-  const { error } = await supabase.from("projects").update({ status: "dispatch" }).eq("id", projectId);
+  const { error } = await admin.from("projects").update({ status: "dispatch" }).eq("id", projectId);
   if (error) return { error: error.message };
   return {};
 }
