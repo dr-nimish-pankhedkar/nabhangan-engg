@@ -28,13 +28,9 @@ const LogTimeSchema = z.object({
   notes: z.string().max(1000).nullable(),
 });
 
-async function requireStageAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, projectId: string, stage: string) {
-  const [{ data: profile }, { data: asgn }] = await Promise.all([
-    supabase.from("profiles").select("role, is_active").eq("id", userId).single(),
-    supabase.from("project_assignments").select("id").eq("project_id", projectId).eq("user_id", userId).eq("stage", stage).maybeSingle(),
-  ]);
+async function requireActiveUser(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", userId).single();
   if (!profile?.is_active) return "Account is inactive.";
-  if (profile?.role !== "admin" && !asgn) return "You are not assigned to this project stage.";
   return null;
 }
 
@@ -51,7 +47,7 @@ export async function logFileRecord(input: {
   if (!user) return { error: "Unauthenticated" };
   const parsed = LogFileSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-  const accessError = await requireStageAccess(supabase, user.id, parsed.data.projectId, "rate_verification");
+  const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };
   const { error } = await supabase.from("project_files").insert({
     project_id: parsed.data.projectId,
@@ -77,7 +73,7 @@ export async function logTime(input: {
   if (!user) return { error: "Unauthenticated" };
   const parsed = LogTimeSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
-  const accessError = await requireStageAccess(supabase, user.id, parsed.data.projectId, "rate_verification");
+  const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };
   const { error } = await supabase.from("time_logs").insert({
     project_id: parsed.data.projectId,
@@ -100,7 +96,7 @@ export async function advanceStage(projectId: string, _newStatus: ProjectStatus)
   if (!proj) return { error: "Project not found." };
   if (proj.status !== "rate_verification") return { error: "Project is not at the Rate Verification stage." };
 
-  const accessError = await requireStageAccess(supabase, user.id, projectId, "rate_verification");
+  const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };
 
   await supabase.from("stage_submissions").upsert({
