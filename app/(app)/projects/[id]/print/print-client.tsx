@@ -63,26 +63,28 @@ export default function PrintClient({ projectId, userId, isLocked, refFiles }: {
   return (
     <div className="space-y-6">
       <ReferenceFiles files={refFiles} />
-      <Card className="border-slate-200">
-        <CardHeader className="pb-3"><CardTitle className="text-sm">Log Time</CardTitle></CardHeader>
-        <CardContent>
-          {timeLogged ? (
-            <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle className="h-4 w-4" />Time logged</div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onTimeSubmit)} className="space-y-4">
-                <FormField control={form.control} name="hours_spent" render={({ field }) => (
-                  <FormItem><FormLabel>Hours Spent</FormLabel><FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="notes" render={({ field }) => (
-                  <FormItem><FormLabel>Notes</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
-              </form>
-            </Form>
-          )}
-        </CardContent>
-      </Card>
+      {!showTimePrompt && (
+        <Card className="border-slate-200">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Log Time</CardTitle></CardHeader>
+          <CardContent>
+            {timeLogged ? (
+              <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle className="h-4 w-4" />Time logged</div>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onTimeSubmit)} className="space-y-4">
+                  <FormField control={form.control} name="hours_spent" render={({ field }) => (
+                    <FormItem><FormLabel>Hours Spent</FormLabel><FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="notes" render={({ field }) => (
+                    <FormItem><FormLabel>Notes</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <Button type="submit" className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#162d4a] text-white">Log Time</Button>
+                </form>
+              </Form>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
