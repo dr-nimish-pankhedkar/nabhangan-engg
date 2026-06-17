@@ -121,7 +121,7 @@ story.append(Paragraph(
 ))
 story.append(Spacer(1, 5))
 story.append(Paragraph(
-    f'The platform is accessible at: <b><font color="#1e3a5f">https://nabhangan-engg.vercel.app</font></b>',
+    f'The platform is accessible at: <b><font color="#1e3a5f">https://nabhangan.chemiligence.in</font></b>',
     s("url", fontSize=9.5, textColor=DARK, leading=14)
 ))
 story.append(Spacer(1, 10))
@@ -245,7 +245,7 @@ story.append(Spacer(1, 12))
 story.append(Table(
     [[Paragraph("Platform URL", s("ul", fontSize=9, textColor=SLATE,
                                    fontName="Helvetica-Bold", leading=12)),
-      Paragraph("https://nabhangan-engg.vercel.app",
+      Paragraph("https://nabhangan.chemiligence.in",
                 s("uv", fontSize=10, textColor=NAVY, fontName="Helvetica-Bold",
                   leading=13))]],
     colWidths=[40*mm, 134*mm],

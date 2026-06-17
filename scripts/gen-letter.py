@@ -167,7 +167,7 @@ story.append(Paragraph(
 story.append(Spacer(1, 8))
 
 cred_rows = [
-    [Paragraph("<b>Platform URL</b>", CRED_S), Paragraph("https://nabhangan-engg.vercel.app", CRED_S), Paragraph("", CRED_S)],
+    [Paragraph("<b>Platform URL</b>", CRED_S), Paragraph("https://nabhangan.chemiligence.in", CRED_S), Paragraph("", CRED_S)],
     [Paragraph("", CRED_S), Paragraph("", CRED_S), Paragraph("", CRED_S)],
     [Paragraph("<b>Email Address</b>", CRED_S), Paragraph("<b>Role</b>", CRED_S), Paragraph("<b>Password</b>", CRED_S)],
     [Paragraph("harshadab@nabhangan.com", CRED_S), Paragraph("Admin", CRED_S), Paragraph("staff1706*", CRED_S)],
