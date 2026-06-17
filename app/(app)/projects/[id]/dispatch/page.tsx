@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DispatchClient from "./dispatch-client";
 import StagePendingCard from "../stage-pending-card";
+import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
 const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
 const THIS_STAGE_IDX = 7; // dispatch
@@ -37,6 +38,7 @@ export default async function DispatchPage({ params }: { params: Promise<{ id: s
     const assignedTo = (assignment as any)?.profiles?.full_name ?? null;
     return (
       <div className="max-w-2xl">
+        <RealtimeProjectRefresh projectId={id} />
         <h1 className="text-xl font-semibold text-slate-800 mb-6">Dispatch</h1>
         <StagePendingCard activeStage={projectRes.data?.status ?? "lead"} assignedTo={assignedTo} />
       </div>
@@ -46,6 +48,7 @@ export default async function DispatchPage({ params }: { params: Promise<{ id: s
   const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
   return (
     <div className="max-w-2xl">
+      <RealtimeProjectRefresh projectId={id} />
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Dispatch</h1>
       <DispatchClient projectId={id} userId={user.id} isLocked={isLocked} />
     </div>

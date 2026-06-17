@@ -20,6 +20,7 @@ import ApproveCaseButton from "./approve-case-button";
 import RevokeStageButton from "./revoke-stage-button";
 import FileManager from "./file-manager";
 import DeleteCaseButton from "./delete-case-button";
+import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -115,6 +116,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="max-w-3xl">
+      <RealtimeProjectRefresh projectId={id} />
       <div className="flex items-center gap-3 mb-6 min-w-0 flex-wrap">
         <Link href="/projects" className="text-sm text-slate-500 hover:text-slate-700 shrink-0">Cases</Link>
         <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />

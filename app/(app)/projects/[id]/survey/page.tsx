@@ -8,6 +8,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SurveyStageClient from "./survey-client";
 import StagePendingCard from "../stage-pending-card";
+import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
 const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
 const THIS_STAGE_IDX = 1; // survey
@@ -42,6 +43,7 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
     const assignedTo = (assignment as any)?.profiles?.full_name ?? null;
     return (
       <div className="max-w-2xl">
+        <RealtimeProjectRefresh projectId={id} />
         <h1 className="text-xl font-semibold text-slate-800 mb-6">Site Visit Report</h1>
         <StagePendingCard activeStage={projectRes.data.status} assignedTo={assignedTo} />
       </div>
@@ -53,6 +55,7 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="max-w-2xl">
+      <RealtimeProjectRefresh projectId={id} />
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Site Visit Report</h1>
       <SurveyStageClient
         projectId={id}

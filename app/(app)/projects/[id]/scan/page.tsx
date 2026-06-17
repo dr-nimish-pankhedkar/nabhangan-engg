@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ScanClient from "./scan-client";
 import StagePendingCard from "../stage-pending-card";
+import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
 const BUCKET = "project-files";
 const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
@@ -39,6 +40,7 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
     const assignedTo = (assignment as any)?.profiles?.full_name ?? null;
     return (
       <div className="max-w-2xl">
+        <RealtimeProjectRefresh projectId={id} />
         <h1 className="text-xl font-semibold text-slate-800 mb-6">Scan Stage</h1>
         <StagePendingCard activeStage={projectRes.data?.status ?? "lead"} assignedTo={assignedTo} />
       </div>
@@ -56,6 +58,7 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="max-w-2xl">
+      <RealtimeProjectRefresh projectId={id} />
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Scan Stage</h1>
       <ScanClient projectId={id} userId={user.id} isLocked={isLocked} refFiles={refFiles} />
     </div>

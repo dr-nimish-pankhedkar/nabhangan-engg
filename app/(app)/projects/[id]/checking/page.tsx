@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CheckingClient from "./checking-client";
 import StagePendingCard from "../stage-pending-card";
+import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
 const BUCKET = "project-files";
 const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
@@ -39,6 +40,7 @@ export default async function CheckingPage({ params }: { params: Promise<{ id: s
     const assignedTo = (assignment as any)?.profiles?.full_name ?? null;
     return (
       <div className="max-w-2xl">
+        <RealtimeProjectRefresh projectId={id} />
         <h1 className="text-xl font-semibold text-slate-800 mb-6">Checking Stage</h1>
         <StagePendingCard activeStage={projectRes.data?.status ?? "lead"} assignedTo={assignedTo} />
       </div>
@@ -56,6 +58,7 @@ export default async function CheckingPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="max-w-2xl">
+      <RealtimeProjectRefresh projectId={id} />
       <h1 className="text-xl font-semibold text-slate-800 mb-6">Checking Stage</h1>
       <CheckingClient projectId={id} userId={user.id} isLocked={isLocked} refFiles={refFiles} />
     </div>
