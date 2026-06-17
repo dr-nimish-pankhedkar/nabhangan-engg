@@ -66,18 +66,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const isAdmin = profile?.role === "admin";
   const currentStageIdx = STAGE_ORDER.indexOf(project.status);
 
+  const admin = await createAdminClient();
+
   const [filesRes, responsesRes, timelogsRes, assignmentsRes, submissionsRes] = await Promise.all([
-    supabase.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
-    supabase.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
-    supabase.from("time_logs").select("*, profiles(full_name)").eq("project_id", id).order("logged_at", { ascending: false }),
-    supabase.from("project_assignments").select("*, profiles(full_name, role)").eq("project_id", id),
-    supabase.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by").eq("project_id", id),
+    admin.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
+    admin.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
+    admin.from("time_logs").select("*, profiles(full_name)").eq("project_id", id).order("logged_at", { ascending: false }),
+    admin.from("project_assignments").select("*, profiles(full_name, role)").eq("project_id", id),
+    admin.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by").eq("project_id", id),
   ]);
 
   const rawFiles = filesRes.data || [];
   const files = await Promise.all(
     rawFiles.map(async (f: any) => {
-      const { data } = await supabase.storage.from("project-files").createSignedUrl(f.file_path, 31536000);
+      const { data } = await admin.storage.from("project-files").createSignedUrl(f.file_path, 31536000);
       return { ...f, signedUrl: data?.signedUrl || null };
     })
   );
@@ -94,12 +96,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     ? 100
     : Math.round((currentStageIdx / STAGE_ORDER.length) * 100);
 
-  // Fetch third-party survey token for this project (admin only) — include used/expired so name persists after submission
+  // Third-party survey token — fetch for all users so activity history is consistent
   let surveyThirdPartyName: string | null = null;
   let surveyThirdPartySubmittedAt: string | null = null;
-  if (isAdmin) {
-    const adminClient = await createAdminClient();
-    const { data: tpToken } = await adminClient
+  {
+    const { data: tpToken } = await admin
       .from("third_party_tokens")
       .select("surveyor_name, used_at")
       .eq("project_id", id)
