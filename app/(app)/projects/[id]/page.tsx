@@ -65,8 +65,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const isAdmin = profile?.role === "admin";
   const currentStageIdx = STAGE_ORDER.indexOf(project.status);
-  const progressPct = Math.round((currentStageIdx / (STAGE_ORDER.length - 1)) * 100);
-  const isComplete = project.status === "dispatch";
 
   const [filesRes, responsesRes, timelogsRes, assignmentsRes, submissionsRes] = await Promise.all([
     supabase.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
@@ -89,6 +87,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const submissions = submissionsRes.data || [];
   const submissionsMap: Record<string, any> = {};
   submissions.forEach((s: any) => { submissionsMap[s.stage] = s; });
+
+  const isDispatchSubmitted = !!submissionsMap["dispatch"] && !submissionsMap["dispatch"].revoked_by;
+  const isComplete = project.status === "dispatch" && isDispatchSubmitted;
+  const progressPct = isComplete
+    ? 100
+    : Math.round((currentStageIdx / STAGE_ORDER.length) * 100);
 
   // Fetch third-party survey token for this project (admin only) — include used/expired so name persists after submission
   let surveyThirdPartyName: string | null = null;
