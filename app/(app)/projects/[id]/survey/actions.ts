@@ -128,7 +128,7 @@ export async function logFileRecord(input: {
   fileName: string;
   fileType: string;
   remarks?: string;
-}): Promise<{ error?: string }> {
+}): Promise<{ id?: string; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
@@ -136,7 +136,7 @@ export async function logFileRecord(input: {
   if (!parsed.success) return { error: "Invalid input" };
   const accessError = await requireSurveyAccess(supabase, user.id, parsed.data.projectId);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("project_files").insert({
+  const { data, error } = await supabase.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
     stage: parsed.data.stage,
@@ -144,7 +144,31 @@ export async function logFileRecord(input: {
     file_name: parsed.data.fileName,
     file_type: parsed.data.fileType,
     remarks: parsed.data.remarks || null,
-  });
+  }).select("id").single();
+  if (error) return { error: error.message };
+  return { id: data.id };
+}
+
+export async function deletePhoto(fileId: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+  if (!UUIDSchema.safeParse(fileId).success) return { error: "Invalid file ID" };
+
+  const { data: fileRecord } = await supabase
+    .from("project_files")
+    .select("file_path, project_id")
+    .eq("id", fileId)
+    .single();
+
+  if (!fileRecord) return { error: "File not found." };
+
+  const accessError = await requireSurveyAccess(supabase, user.id, fileRecord.project_id);
+  if (accessError) return { error: accessError };
+
+  const admin = await createAdminClient();
+  await admin.storage.from("project-files").remove([fileRecord.file_path]);
+  const { error } = await admin.from("project_files").delete().eq("id", fileId);
   if (error) return { error: error.message };
   return {};
 }

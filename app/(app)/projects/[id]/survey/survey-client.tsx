@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { uploadProjectFile } from "@/lib/storage";
-import { logFileRecord, saveSiteVisitReport, submitSiteVisitReport, updateCaseInfoFromSurvey, logTime } from "./actions";
+import { logFileRecord, saveSiteVisitReport, submitSiteVisitReport, updateCaseInfoFromSurvey, logTime, deletePhoto } from "./actions";
 import { FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -237,7 +237,9 @@ export default function SurveyStageClient({
     },
   });
 
-  const [photosUploaded, setPhotosUploaded] = useState<string[]>([]);
+  const [photosUploaded, setPhotosUploaded] = useState<{ id: string; file_name: string }[]>([]);
+  const [deletedPhotoIds, setDeletedPhotoIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -249,7 +251,8 @@ export default function SurveyStageClient({
   const [locating, setLocating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const totalPhotos = existingPhotos.length + photosUploaded.length;
+  const visibleExisting = existingPhotos.filter((p) => !deletedPhotoIds.has(p.id));
+  const totalPhotos = visibleExisting.length + photosUploaded.length;
   const remaining = MAX_PHOTOS - totalPhotos;
 
   function handleGetLocation() {
@@ -289,14 +292,15 @@ export default function SurveyStageClient({
 
     setUploadingCount(files.length);
     let done = 0;
-    const names: string[] = [];
+    const newPhotos: { id: string; file_name: string }[] = [];
 
     for (const file of files) {
       try {
         setUploadProgress(Math.round((done / files.length) * 100));
         const path = await uploadProjectFile(projectId, "survey", file);
-        await logFileRecord({ projectId, userId, stage: "survey", filePath: path, fileName: file.name, fileType: file.type });
-        names.push(file.name);
+        const result = await logFileRecord({ projectId, userId, stage: "survey", filePath: path, fileName: file.name, fileType: file.type });
+        if (result.error) { setUploadError(result.error); continue; }
+        if (result.id) newPhotos.push({ id: result.id, file_name: file.name });
         done++;
         setUploadProgress(Math.round((done / files.length) * 100));
       } catch (err: any) {
@@ -304,9 +308,22 @@ export default function SurveyStageClient({
       }
     }
 
-    setPhotosUploaded((prev) => [...prev, ...names]);
+    setPhotosUploaded((prev) => [...prev, ...newPhotos]);
     setUploadingCount(0);
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleDeletePhoto(fileId: string, isExisting: boolean) {
+    setDeletingId(fileId);
+    setUploadError(null);
+    const result = await deletePhoto(fileId);
+    setDeletingId(null);
+    if (result.error) { setUploadError(result.error); return; }
+    if (isExisting) {
+      setDeletedPhotoIds((prev) => new Set([...prev, fileId]));
+    } else {
+      setPhotosUploaded((prev) => prev.filter((p) => p.id !== fileId));
+    }
   }
 
   async function handleSaveDraft(data: FormData) {
@@ -739,15 +756,30 @@ export default function SurveyStageClient({
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-3 space-y-3">
+            {/* Mandatory note */}
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2 border border-amber-200">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-500" />
+              <span><strong>Mandatory:</strong> Upload at least one selfie taken at the property and one photo of the building / structure. These are required to complete the report.</span>
+            </div>
+
             {/* Existing photos */}
-            {existingPhotos.length > 0 && (
+            {visibleExisting.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs text-slate-400 font-medium">Already uploaded</p>
                 <div className="space-y-1">
-                  {existingPhotos.map((p) => (
+                  {visibleExisting.map((p) => (
                     <div key={p.id} className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
                       <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                      <span className="truncate">{p.file_name}</span>
+                      <span className="truncate flex-1">{p.file_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(p.id, true)}
+                        disabled={deletingId === p.id}
+                        className="shrink-0 p-0.5 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-40"
+                        title="Remove photo"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -759,10 +791,19 @@ export default function SurveyStageClient({
               <div className="space-y-1">
                 <p className="text-xs text-slate-400 font-medium">Uploaded this session</p>
                 <div className="space-y-1">
-                  {photosUploaded.map((name, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded px-3 py-2">
+                  {photosUploaded.map((photo) => (
+                    <div key={photo.id} className="flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded px-3 py-2">
                       <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{name}</span>
+                      <span className="truncate flex-1">{photo.file_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(photo.id, false)}
+                        disabled={deletingId === photo.id}
+                        className="shrink-0 p-0.5 rounded hover:bg-red-100 text-green-600/60 hover:text-red-500 transition-colors disabled:opacity-40"
+                        title="Remove photo"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
