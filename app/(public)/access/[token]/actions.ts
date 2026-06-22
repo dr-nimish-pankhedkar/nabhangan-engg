@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const TokenSchema = z.string().uuid();
+const UUIDSchema = z.string().uuid();
 
 async function validateToken(token: string) {
   if (!TokenSchema.safeParse(token).success) return { error: "Invalid token" as const, tokenRow: null };
@@ -23,6 +24,27 @@ async function validateToken(token: string) {
   if (data.used_at) return { error: "This link has already been submitted." as const, tokenRow: null };
   if (new Date(data.expires_at) < new Date()) return { error: "This link has expired." as const, tokenRow: null };
   return { error: null, tokenRow: data };
+}
+
+export async function deleteThirdPartyPhoto(token: string, fileId: string): Promise<{ error?: string }> {
+  const { error, tokenRow } = await validateToken(token);
+  if (error || !tokenRow) return { error: error ?? "Invalid token" };
+  if (!UUIDSchema.safeParse(fileId).success) return { error: "Invalid file ID" };
+
+  const admin = await createAdminClient();
+  const { data: fileRecord } = await admin
+    .from("project_files")
+    .select("file_path, project_id")
+    .eq("id", fileId)
+    .single();
+
+  if (!fileRecord) return { error: "File not found." };
+  if (fileRecord.project_id !== tokenRow.project_id) return { error: "Access denied." };
+
+  await admin.storage.from("project-files").remove([fileRecord.file_path]);
+  const { error: dbError } = await admin.from("project_files").delete().eq("id", fileId);
+  if (dbError) return { error: dbError.message };
+  return {};
 }
 
 export async function saveThirdPartyDraft(

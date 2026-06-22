@@ -10,7 +10,7 @@ import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { saveThirdPartyDraft, submitThirdPartyReport } from "./actions";
+import { saveThirdPartyDraft, submitThirdPartyReport, deleteThirdPartyPhoto } from "./actions";
 import { FACING_OPTIONS, RCC_OPTIONS, VALUATION_METHODS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,7 +168,9 @@ export default function ThirdPartySurveyClient({
   const [customValues, setCustomValues] = useState<Record<string, string>>(
     customFields.reduce((acc, cf) => ({ ...acc, [cf.key]: existingReport?.[cf.key] || "" }), {})
   );
-  const [photosUploaded, setPhotosUploaded] = useState<string[]>([]);
+  const [photosUploaded, setPhotosUploaded] = useState<{ id: string; file_name: string }[]>([]);
+  const [deletedPhotoIds, setDeletedPhotoIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -178,7 +180,8 @@ export default function ThirdPartySurveyClient({
   const [locating, setLocating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const totalPhotos = existingPhotos.length + photosUploaded.length;
+  const visibleExisting = existingPhotos.filter((p) => !deletedPhotoIds.has(p.id));
+  const totalPhotos = visibleExisting.length + photosUploaded.length;
   const remaining = MAX_PHOTOS - totalPhotos;
 
   function handleGetLocation() {
@@ -215,7 +218,7 @@ export default function ThirdPartySurveyClient({
 
     setUploadingCount(files.length);
     let done = 0;
-    const names: string[] = [];
+    const newPhotos: { id: string; file_name: string }[] = [];
 
     for (const file of files) {
       try {
@@ -226,7 +229,7 @@ export default function ThirdPartySurveyClient({
         const res = await fetch("/api/third-party-upload", { method: "POST", body: fd });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Upload failed");
-        names.push(file.name);
+        if (json.fileId) newPhotos.push({ id: json.fileId, file_name: file.name });
         done++;
         setUploadProgress(Math.round((done / files.length) * 100));
       } catch (err: any) {
@@ -234,9 +237,22 @@ export default function ThirdPartySurveyClient({
       }
     }
 
-    setPhotosUploaded((prev) => [...prev, ...names]);
+    setPhotosUploaded((prev) => [...prev, ...newPhotos]);
     setUploadingCount(0);
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleDeletePhoto(fileId: string, isExisting: boolean) {
+    setDeletingId(fileId);
+    setUploadError(null);
+    const result = await deleteThirdPartyPhoto(accessToken, fileId);
+    setDeletingId(null);
+    if (result.error) { setUploadError(result.error); return; }
+    if (isExisting) {
+      setDeletedPhotoIds((prev) => new Set([...prev, fileId]));
+    } else {
+      setPhotosUploaded((prev) => prev.filter((p) => p.id !== fileId));
+    }
   }
 
   async function handleSaveDraft(data: FormData) {
@@ -571,26 +587,54 @@ export default function ThirdPartySurveyClient({
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-3 space-y-3">
-            {existingPhotos.length > 0 && (
+            {/* Mandatory note */}
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2 border border-amber-200">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-500" />
+              <span><strong>Mandatory:</strong> Upload at least one selfie taken at the property and one photo of the building / structure. These are required to complete the report.</span>
+            </div>
+
+            {visibleExisting.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs text-slate-400 font-medium">Already uploaded</p>
-                {existingPhotos.map((p) => (
-                  <div key={p.id} className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                    <span className="truncate">{p.file_name}</span>
-                  </div>
-                ))}
+                <div className="space-y-1">
+                  {visibleExisting.map((p) => (
+                    <div key={p.id} className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
+                      <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                      <span className="truncate flex-1">{p.file_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(p.id, true)}
+                        disabled={deletingId === p.id}
+                        className="shrink-0 p-0.5 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-40"
+                        title="Remove photo"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             {photosUploaded.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs text-slate-400 font-medium">Uploaded this session</p>
-                {photosUploaded.map((name, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded px-3 py-2">
-                    <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{name}</span>
-                  </div>
-                ))}
+                <div className="space-y-1">
+                  {photosUploaded.map((photo) => (
+                    <div key={photo.id} className="flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded px-3 py-2">
+                      <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate flex-1">{photo.file_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(photo.id, false)}
+                        disabled={deletingId === photo.id}
+                        className="shrink-0 p-0.5 rounded hover:bg-red-100 text-green-600/60 hover:text-red-500 transition-colors disabled:opacity-40"
+                        title="Remove photo"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             {remaining > 0 ? (

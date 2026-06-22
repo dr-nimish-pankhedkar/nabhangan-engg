@@ -54,17 +54,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: storageError.message }, { status: 500 });
   }
 
-  const { error: dbError } = await admin.from("project_files").insert({
+  const { data: dbData, error: dbError } = await admin.from("project_files").insert({
     project_id: tokenRow.project_id,
     user_id: tokenRow.created_by,
     stage: "survey",
     file_path: filePath,
     file_name: file.name,
     file_type: file.type,
-  });
+  }).select("id").single();
   if (dbError) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ fileName: file.name });
+  return NextResponse.json({ fileName: file.name, fileId: dbData.id });
 }
