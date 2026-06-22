@@ -16,6 +16,7 @@ import TaskRequestActions from "./task-request-actions";
 import RemoveAssignmentButton from "./remove-assignment-button";
 import GenerateLinkForm from "./generate-link-form";
 import OtherAssignmentForm from "./other-assignment-form";
+import CaseInfoPopover from "./case-info-popover";
 import { cn } from "@/lib/utils";
 
 const STAGE_SHORT: Record<string, string> = {
@@ -39,7 +40,7 @@ export default async function AssignmentsPage() {
 
   const admin = await createAdminClient();
   const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes, surveySubmissionsRes] = await Promise.all([
-    supabase.from("projects").select("id, bank_name, status").neq("status", "dispatch").order("created_at", { ascending: false }),
+    supabase.from("projects").select("id, bank_name, bank_metadata, project_address, status").neq("status", "dispatch").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
@@ -138,9 +139,25 @@ export default async function AssignmentsPage() {
                         "sticky left-0 z-10 px-3 py-2.5 border-r border-slate-200 font-medium text-slate-800",
                         idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                       )}>
-                        <Link href={`/projects/${p.id}`} className="hover:text-[#1e3a5f] hover:underline truncate block max-w-[170px]" title={p.bank_name}>
-                          {p.bank_name}
-                        </Link>
+                        <div className="flex items-start gap-1">
+                          <Link
+                            href={`/projects/${p.id}`}
+                            className="hover:text-[#1e3a5f] hover:underline min-w-0"
+                            title={[p.bank_name, p.bank_metadata?.branch, p.bank_metadata?.owner_name].filter(Boolean).join(" · ")}
+                          >
+                            <span className="block truncate max-w-[155px] text-xs leading-snug">
+                              {[p.bank_name, p.bank_metadata?.branch, p.bank_metadata?.owner_name].filter(Boolean).join(" · ")}
+                            </span>
+                          </Link>
+                          <CaseInfoPopover info={{
+                            branch: p.bank_metadata?.branch,
+                            bank_manager_name: p.bank_metadata?.bank_manager_name,
+                            bank_manager_mob: p.bank_metadata?.bank_manager_mob,
+                            owner_name: p.bank_metadata?.owner_name,
+                            owner_mob: p.bank_metadata?.owner_mob,
+                            project_address: p.project_address,
+                          }} />
+                        </div>
                         {!hasAny && (
                           <span className="text-[10px] text-slate-300 font-normal">no assignments</span>
                         )}
