@@ -137,7 +137,28 @@ export default async function ProjectsPage({
                           </span>
                         )}
                       </div>
+                      {p.bank_metadata?.branch && (
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">Branch: {p.bank_metadata.branch}</p>
+                      )}
                       <p className="text-sm text-slate-500 mt-0.5 truncate">{p.project_address}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+                        {p.bank_metadata?.bank_manager_name && (
+                          <p className="text-xs text-slate-400 truncate">
+                            Mgr: <span className="text-slate-600">{p.bank_metadata.bank_manager_name}</span>
+                            {p.bank_metadata?.bank_manager_mob && (
+                              <span className="text-slate-400"> · {p.bank_metadata.bank_manager_mob}</span>
+                            )}
+                          </p>
+                        )}
+                        {p.bank_metadata?.owner_name && (
+                          <p className="text-xs text-slate-400 truncate">
+                            Owner: <span className="text-slate-600">{p.bank_metadata.owner_name}</span>
+                            {p.bank_metadata?.owner_mob && (
+                              <span className="text-slate-400"> · {p.bank_metadata.owner_mob}</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
                       {isAdmin && (
                         <p className="text-xs text-slate-400 mt-1 truncate">Created by: {p.profiles?.full_name}</p>
                       )}
