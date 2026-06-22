@@ -6,7 +6,7 @@
 
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const AssignmentSchema = z.object({
@@ -46,7 +46,9 @@ export async function createProject(input: {
 
   const hasSurveyAssignment = isAdmin && parsed.data.assignments?.some((a) => a.stage === "survey");
 
-  const { data, error } = await supabase
+  const admin = await createAdminClient();
+
+  const { data, error } = await admin
     .from("projects")
     .insert({
       bank_name: parsed.data.bank_name,
@@ -67,7 +69,7 @@ export async function createProject(input: {
 
   // Only admin can assign staff at creation time
   if (isAdmin && parsed.data.assignments && parsed.data.assignments.length > 0) {
-    const { error: assignError } = await supabase.from("project_assignments").insert(
+    const { error: assignError } = await admin.from("project_assignments").insert(
       parsed.data.assignments.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
     );
     if (assignError) return { error: assignError.message };

@@ -11,7 +11,7 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, AlertTriangle, Clock } from "lucide-react";
+import { Plus, AlertTriangle, Hourglass } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default async function ProjectsPage({
@@ -44,16 +44,14 @@ export default async function ProjectsPage({
       .from("project_assignments")
       .select("project_id")
       .eq("user_id", user.id);
-    const ids = (assignedIds || []).map((a: any) => a.project_id);
-    if (ids.length === 0) {
-      return (
-        <div>
-          <h1 className="text-xl font-semibold text-slate-800 mb-6">Cases</h1>
-          <p className="text-slate-500 text-sm">No cases assigned to you.</p>
-        </div>
-      );
+    const assignedProjectIds = (assignedIds || []).map((a: any) => a.project_id);
+
+    // Show both assigned projects and cases this staff member created (pending review)
+    if (assignedProjectIds.length > 0) {
+      query = query.or(`id.in.(${assignedProjectIds.join(",")}),created_by.eq.${user.id}`);
+    } else {
+      query = query.eq("created_by", user.id);
     }
-    query = query.in("id", ids);
   }
 
   if (activeStage) {
@@ -111,7 +109,11 @@ export default async function ProjectsPage({
 
       {!projects || projects.length === 0 ? (
         <p className="text-slate-500 text-sm mt-4">
-          {docsFilter ? "No cases with pending documents." : "No cases found."}
+          {docsFilter
+            ? "No cases with pending documents."
+            : isAdmin
+            ? "No cases found."
+            : "No cases yet. Create a new case to get started."}
         </p>
       ) : (
         <div className="space-y-3 mt-4">
@@ -135,9 +137,9 @@ export default async function ProjectsPage({
                             <AlertTriangle className="h-3 w-3" /> Docs Pending
                           </span>
                         )}
-                        {p.requires_review && isAdmin && (
+                        {p.requires_review && (
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-100 rounded px-1.5 py-0.5 shrink-0">
-                            <Clock className="h-3 w-3" /> Needs Review
+                            <Hourglass className="h-3 w-3" /> Pending Review
                           </span>
                         )}
                       </div>
