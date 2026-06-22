@@ -125,7 +125,11 @@ export default async function ProjectsPage({
                   <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-slate-800 truncate">{p.bank_name}</p>
+                        <p className="font-medium text-slate-800">
+                          {[p.bank_name, p.bank_metadata?.branch, p.bank_metadata?.owner_name]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
                         {p.documents_pending && (
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 rounded px-1.5 py-0.5 shrink-0">
                             <AlertTriangle className="h-3 w-3" /> Docs Pending
@@ -137,9 +141,6 @@ export default async function ProjectsPage({
                           </span>
                         )}
                       </div>
-                      {p.bank_metadata?.branch && (
-                        <p className="text-xs text-slate-500 mt-0.5 truncate">Branch: {p.bank_metadata.branch}</p>
-                      )}
                       <p className="text-sm text-slate-500 mt-0.5 truncate">{p.project_address}</p>
                       <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
                         {p.bank_metadata?.bank_manager_name && (
@@ -150,12 +151,9 @@ export default async function ProjectsPage({
                             )}
                           </p>
                         )}
-                        {p.bank_metadata?.owner_name && (
+                        {p.bank_metadata?.owner_mob && (
                           <p className="text-xs text-slate-400 truncate">
-                            Owner: <span className="text-slate-600">{p.bank_metadata.owner_name}</span>
-                            {p.bank_metadata?.owner_mob && (
-                              <span className="text-slate-400"> · {p.bank_metadata.owner_mob}</span>
-                            )}
+                            Owner Mob: <span className="text-slate-600">{p.bank_metadata.owner_mob}</span>
                           </p>
                         )}
                       </div>
