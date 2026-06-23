@@ -21,6 +21,7 @@ import RevokeStageButton from "./revoke-stage-button";
 import FileManager from "./file-manager";
 import DeleteCaseButton from "./delete-case-button";
 import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
+import ThirdPartyLinkPopover from "@/components/third-party-link-popover";
 
 const STAGE_ROUTES: Record<ProjectStatus, string> = {
   lead: "",
@@ -99,10 +100,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   // Third-party survey token — fetch for all users so activity history is consistent
   let surveyThirdPartyName: string | null = null;
   let surveyThirdPartySubmittedAt: string | null = null;
+  let surveyTpToken: string | null = null;
+  let surveyTpStatus: "submitted" | "active" | "expired" | null = null;
   {
     const { data: tpToken } = await admin
       .from("third_party_tokens")
-      .select("surveyor_name, used_at")
+      .select("token, surveyor_name, used_at, expires_at")
       .eq("project_id", id)
       .eq("stage", "survey")
       .order("created_at", { ascending: false })
@@ -110,6 +113,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       .maybeSingle();
     surveyThirdPartyName = tpToken?.surveyor_name ?? null;
     surveyThirdPartySubmittedAt = tpToken?.used_at ?? null;
+    surveyTpToken = tpToken?.token ? String(tpToken.token) : null;
+    surveyTpStatus = tpToken
+      ? tpToken.used_at
+        ? "submitted"
+        : new Date(tpToken.expires_at) < new Date()
+        ? "expired"
+        : "active"
+      : null;
   }
 
   const nextStageIdx = currentStageIdx + 1;
@@ -302,7 +313,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                             {a.profiles?.full_name}
                           </Badge>
                         ))}
-                        {stage.value === "survey" && surveyThirdPartyName && (
+                        {stage.value === "survey" && surveyThirdPartyName && surveyTpToken && surveyTpStatus && isAdmin && (
+                          <ThirdPartyLinkPopover
+                            projectId={id}
+                            surveyorName={surveyThirdPartyName}
+                            status={surveyTpStatus}
+                            token={surveyTpToken}
+                          />
+                        )}
+                        {stage.value === "survey" && surveyThirdPartyName && (!isAdmin || !surveyTpToken) && (
                           <Badge variant="outline" className="text-xs font-normal text-purple-700 border-purple-300 bg-purple-50">
                             Third Party — {surveyThirdPartyName}
                           </Badge>
@@ -336,10 +355,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               {hasContent && (
                 <CardContent className="px-4 pb-4 pt-0 space-y-2">
                   {hasThirdPartySurvey && (
-                    <div className="text-xs text-slate-600 bg-purple-50 border border-purple-100 rounded px-3 py-2">
+                    <div className="text-xs text-slate-600 bg-purple-50 border border-purple-100 rounded px-3 py-2 flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-purple-800">Survey Report submitted</span>
-                      <span className="text-slate-500 ml-2">by Third Party — {surveyThirdPartyName}</span>
-                      <span className="text-slate-400 ml-2">
+                      {isAdmin && surveyTpToken && surveyTpStatus ? (
+                        <ThirdPartyLinkPopover
+                          projectId={id}
+                          surveyorName={surveyThirdPartyName!}
+                          status={surveyTpStatus}
+                          token={surveyTpToken}
+                        />
+                      ) : (
+                        <span className="text-slate-500">by Third Party — {surveyThirdPartyName}</span>
+                      )}
+                      <span className="text-slate-400">
                         · {new Date(surveyThirdPartySubmittedAt!).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })}
                       </span>
                     </div>

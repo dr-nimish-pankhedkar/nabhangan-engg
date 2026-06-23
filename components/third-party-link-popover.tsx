@@ -7,10 +7,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { generateThirdPartyToken } from "./generate-link-action";
+import { generateThirdPartyToken } from "@/app/(app)/admin/assignments/generate-link-action";
 import { Copy, CheckCircle, RefreshCw } from "lucide-react";
 
-type Status = "submitted" | "active" | "expired";
+export type TpStatus = "submitted" | "active" | "expired";
 
 const EXPIRY_OPTS = [
   { label: "6 hours", value: 6 },
@@ -28,7 +28,7 @@ export default function ThirdPartyLinkPopover({
 }: {
   projectId: string;
   surveyorName: string;
-  status: Status;
+  status: TpStatus;
   token: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -87,14 +87,14 @@ export default function ThirdPartyLinkPopover({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 font-medium border rounded cursor-pointer hover:opacity-80 whitespace-nowrap ${badgeClass}`}
+        className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 font-medium border rounded cursor-pointer hover:opacity-80 whitespace-nowrap ${badgeClass}`}
         title={status === "active" ? "View / copy link" : status === "expired" ? "Generate new link" : "Submitted by third party"}
       >
-        {indicator} {surveyorName}
+        {indicator} Third Party — {surveyorName}
       </button>
 
       {open && (
-        <div className="absolute left-0 top-7 z-50 bg-white border border-slate-200 rounded-lg shadow-lg p-3 w-72 space-y-3 text-xs">
+        <div className="absolute left-0 top-8 z-50 bg-white border border-slate-200 rounded-lg shadow-lg p-3 w-72 space-y-3 text-xs">
           <p className="font-semibold text-slate-700">{surveyorName}</p>
 
           {status === "submitted" && (

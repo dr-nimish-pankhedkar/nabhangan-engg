@@ -17,7 +17,7 @@ import RemoveAssignmentButton from "./remove-assignment-button";
 import GenerateLinkForm from "./generate-link-form";
 import OtherAssignmentForm from "./other-assignment-form";
 import CaseInfoPopover from "./case-info-popover";
-import ThirdPartyLinkPopover from "./third-party-link-popover";
+import ThirdPartyLinkPopover from "@/components/third-party-link-popover";
 import { cn } from "@/lib/utils";
 
 const STAGE_SHORT: Record<string, string> = {
