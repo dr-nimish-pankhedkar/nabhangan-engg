@@ -44,7 +44,7 @@ export default async function AssignmentsPage() {
     supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
-    admin.from("third_party_tokens").select("project_id, surveyor_name").is("used_at", null).gt("expires_at", new Date().toISOString()),
+    admin.from("third_party_tokens").select("project_id, surveyor_name, used_at, expires_at").order("created_at", { ascending: false }),
     supabase.from("other_assignments").select("id, user_id, task_description, assigned_at, profiles(full_name)").eq("is_active", true).order("assigned_at", { ascending: false }),
     // Projects with a non-revoked survey submission (staff-submitted) — these can't get new TP links
     supabase.from("stage_submissions").select("project_id").eq("stage", "survey").is("revoked_by", null),
@@ -66,11 +66,18 @@ export default async function AssignmentsPage() {
     matrix[a.project_id][a.user_id].push({ stage: a.stage, id: a.id });
   });
 
-  // Build third-party map: tpMap[project_id] = [{surveyor_name}]
-  const tpMap: Record<string, { surveyor_name: string }[]> = {};
+  // Build third-party map: most recent token per project with status
+  type TpEntry = { surveyor_name: string; status: "submitted" | "active" | "expired" };
+  const tpMap: Record<string, TpEntry> = {};
+  const now = new Date();
   (tpTokensRes.data || []).forEach((t: any) => {
-    tpMap[t.project_id] = tpMap[t.project_id] || [];
-    tpMap[t.project_id].push({ surveyor_name: t.surveyor_name });
+    if (tpMap[t.project_id]) return; // already have the most recent (ordered desc)
+    const status: TpEntry["status"] = t.used_at
+      ? "submitted"
+      : new Date(t.expires_at) < now
+      ? "expired"
+      : "active";
+    tpMap[t.project_id] = { surveyor_name: t.surveyor_name, status };
   });
 
   // Only show staff who appear in at least one column OR all active staff (to show availability)
@@ -192,16 +199,20 @@ export default async function AssignmentsPage() {
                       })}
                       {/* Third Party cell */}
                       <td className="px-2 py-2 align-top">
-                        {(tpMap[p.id] || []).length === 0 ? (
+                        {!tpMap[p.id] ? (
                           <span className="text-slate-200 text-[10px] select-none">—</span>
+                        ) : tpMap[p.id].status === "submitted" ? (
+                          <Badge className="text-[10px] px-1.5 py-0 font-medium bg-green-100 text-green-700 border border-green-200 hover:bg-green-100 whitespace-nowrap">
+                            ✓ {tpMap[p.id].surveyor_name}
+                          </Badge>
+                        ) : tpMap[p.id].status === "active" ? (
+                          <Badge className="text-[10px] px-1.5 py-0 font-medium bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-100 whitespace-nowrap">
+                            ⏳ {tpMap[p.id].surveyor_name}
+                          </Badge>
                         ) : (
-                          <div className="flex flex-col gap-1">
-                            {(tpMap[p.id] || []).map((tp, i) => (
-                              <Badge key={i} className="text-[10px] px-1.5 py-0 font-medium bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-100">
-                                Survey — {tp.surveyor_name}
-                              </Badge>
-                            ))}
-                          </div>
+                          <Badge className="text-[10px] px-1.5 py-0 font-medium bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-100 whitespace-nowrap">
+                            ✕ {tpMap[p.id].surveyor_name}
+                          </Badge>
                         )}
                       </td>
                     </tr>
