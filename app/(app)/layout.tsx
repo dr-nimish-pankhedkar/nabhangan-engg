@@ -7,7 +7,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/sidebar";
-import DemoBanner from "@/components/demo-banner";
+import DemoBanner, { TrialExpiredBlock } from "@/components/demo-banner";
 import { demoStatus } from "@/lib/demo";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -24,6 +24,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile) redirect("/login");
 
   const { expired, daysLeft } = demoStatus();
+
+  if (expired) {
+    return <TrialExpiredBlock />;
+  }
 
   return (
     <div className="flex flex-col md:flex-row md:h-screen bg-white">
