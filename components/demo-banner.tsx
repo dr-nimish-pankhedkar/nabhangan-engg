@@ -5,6 +5,14 @@
  */
 
 import { AlertTriangle, Phone } from "lucide-react";
+import { DEMO_EXPIRY } from "@/lib/demo";
+
+const expiryLabel = DEMO_EXPIRY.toLocaleDateString("en-IN", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  timeZone: "Asia/Kolkata",
+});
 
 export default function DemoBanner({ daysLeft, expired }: { daysLeft: number; expired: boolean }) {
   if (expired) {
@@ -15,7 +23,7 @@ export default function DemoBanner({ daysLeft, expired }: { daysLeft: number; ex
     <div className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-xs font-medium shrink-0">
       <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
       <span>
-        <strong>Free Trial Version</strong> — valid till 26 Jun 2026, licensed to use for <strong>Nabhangan Engineers</strong>. Contact Dr. Nimish Pankhedkar, Chemiligence Solutions to purchase the full version.
+        <strong>Free Trial Version</strong> — valid till {expiryLabel}, licensed to use for <strong>Nabhangan Engineers</strong>. Contact Dr. Nimish Pankhedkar, Chemiligence Solutions to purchase the full version.
       </span>
     </div>
   );
