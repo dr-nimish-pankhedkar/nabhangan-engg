@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const schema = z.object({
   project_id: z.string().min(1, "Select a project"),
   user_id: z.string().min(1, "Select a staff member"),
-  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]),
 });
 
 type FormData = z.infer<typeof schema>;

@@ -29,6 +29,7 @@ const STAGE_SHORT: Record<string, string> = {
   print: "Print",
   scan: "Scan",
   dispatch: "Dispatch",
+  fees_received: "Fees Recv.",
 };
 
 export default async function AssignmentsPage() {
@@ -41,7 +42,7 @@ export default async function AssignmentsPage() {
 
   const admin = await createAdminClient();
   const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes, surveySubmissionsRes] = await Promise.all([
-    supabase.from("projects").select("id, bank_name, bank_metadata, project_address, status").neq("status", "dispatch").order("created_at", { ascending: false }),
+    supabase.from("projects").select("id, bank_name, bank_metadata, project_address, status").neq("status", "dispatch").neq("status", "fees_received").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
@@ -98,7 +99,7 @@ export default async function AssignmentsPage() {
       <div className="mb-8">
         <h2 className="text-sm font-semibold text-slate-600 mb-3">
           Assignment Matrix
-          <span className="ml-2 text-xs font-normal text-slate-400">Active cases only · closed (dispatched) cases hidden</span>
+          <span className="ml-2 text-xs font-normal text-slate-400">Active cases only · closed (dispatched / fees received) cases hidden</span>
         </h2>
 
         {projects.length === 0 ? (

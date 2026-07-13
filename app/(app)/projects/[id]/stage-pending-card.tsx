@@ -15,6 +15,7 @@ const STAGE_LABELS: Record<string, string> = {
   print: "Printing",
   scan: "Scanning",
   dispatch: "Dispatch",
+  fees_received: "Fees Received",
 };
 
 export default function StagePendingCard({

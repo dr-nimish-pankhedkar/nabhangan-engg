@@ -11,7 +11,7 @@ import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, PartyPopper, AlertTriangle, Pencil, LockKeyhole, RotateCcw, Download } from "lucide-react";
+import { CheckCircle, ChevronRight, Lightbulb, MapPinned, PenTool, Calculator, ClipboardCheck, Printer, ScanLine, Send, CircleDollarSign, PartyPopper, AlertTriangle, Pencil, LockKeyhole, RotateCcw, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StartSurveyButton from "./start-survey-button";
 import AdvanceStageButton from "./advance-stage-button";
@@ -32,9 +32,10 @@ const STAGE_ROUTES: Record<ProjectStatus, string> = {
   print: "print",
   scan: "scan",
   dispatch: "dispatch",
+  fees_received: "fees-received",
 };
 
-const STAGE_ORDER: ProjectStatus[] = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
+const STAGE_ORDER: ProjectStatus[] = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"];
 
 const STAGE_ICONS: Record<ProjectStatus, React.ElementType> = {
   lead: Lightbulb,
@@ -45,6 +46,7 @@ const STAGE_ICONS: Record<ProjectStatus, React.ElementType> = {
   print: Printer,
   scan: ScanLine,
   dispatch: Send,
+  fees_received: CircleDollarSign,
 };
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -105,7 +107,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   submissions.forEach((s: any) => { submissionsMap[s.stage] = s; });
 
   const isDispatchSubmitted = !!submissionsMap["dispatch"] && !submissionsMap["dispatch"].revoked_by;
-  const isComplete = project.status === "dispatch" && isDispatchSubmitted;
+  const isFeesSubmitted = !!submissionsMap["fees_received"] && !submissionsMap["fees_received"].revoked_by;
+  const isComplete = (project.status === "dispatch" && isDispatchSubmitted) || (project.status === "fees_received" && isFeesSubmitted);
   const progressPct = isComplete
     ? 100
     : Math.round((currentStageIdx / STAGE_ORDER.length) * 100);
@@ -232,8 +235,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <div className="flex items-center gap-3 mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
           <PartyPopper className="h-5 w-5 text-green-600 shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-green-700">Case Dispatched — Complete</p>
-            <p className="text-xs text-green-600/80">All stages completed. This case has been dispatched.</p>
+            <p className="text-sm font-semibold text-green-700">Case Complete — Fees Received</p>
+            <p className="text-xs text-green-600/80">All stages completed and fees received.</p>
           </div>
         </div>
       )}
@@ -258,7 +261,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           const route = STAGE_ROUTES[stage.value];
           const href = route ? `/projects/${id}/${route}` : null;
           const StageIcon = STAGE_ICONS[stage.value];
-          const isFinalActive = active && stage.value === "dispatch";
+          const isFinalActive = active && stage.value === "fees_received";
 
           const node = (
             <div className={`relative w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-colors ${

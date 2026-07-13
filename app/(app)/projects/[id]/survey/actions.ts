@@ -11,7 +11,7 @@ import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
 const UUIDSchema = z.string().uuid();
-const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]);
+const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]);
 
 const TimeLogSchema = z.object({
   projectId: z.string().uuid(),

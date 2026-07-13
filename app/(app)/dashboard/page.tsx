@@ -47,7 +47,8 @@ export default async function DashboardPage() {
         .from("project_assignments")
         .select("user_id, stage, projects(bank_name, status)")
         .neq("stage", "lead")
-        .neq("stage", "dispatch"),
+        .neq("stage", "dispatch")
+        .neq("stage", "fees_received"),
       adminClient
         .from("third_party_tokens")
         .select("surveyor_name, project_id")
@@ -86,7 +87,7 @@ export default async function DashboardPage() {
     }, {} as Record<ProjectStatus, number>);
 
     const total = projects.length;
-    const closedCases = counts["dispatch"] || 0;
+    const closedCases = (counts["dispatch"] || 0) + (counts["fees_received"] || 0);
     const activeCases = total - closedCases;
 
     const STAGE_ORDER = PROJECT_STAGES.map((s) => s.value);
@@ -134,7 +135,7 @@ export default async function DashboardPage() {
             <span className="text-2xl">✅</span>
             <div>
               <p className="text-2xl font-bold text-green-600 leading-none">{closedCases}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Closed (Dispatched)</p>
+              <p className="text-xs text-slate-500 mt-0.5">Closed</p>
             </div>
           </div>
           <div className="w-px bg-slate-200 self-stretch hidden sm:block" />
@@ -158,12 +159,13 @@ export default async function DashboardPage() {
             print: "🖨️",
             scan: "📷",
             dispatch: "📬",
+            fees_received: "💰",
           };
           const visibleStages = PROJECT_STAGES;
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
               {visibleStages.map((stage) => {
-                const isDispatch = stage.value === "dispatch";
+                const isDispatch = stage.value === "dispatch" || stage.value === "fees_received";
                 const count = counts[stage.value];
                 return (
                   <Card key={stage.value} className={cn(
@@ -190,12 +192,12 @@ export default async function DashboardPage() {
         <Card className="border-slate-200 mb-8">
           <CardHeader>
             <CardTitle className="text-sm text-slate-600">Stage Distribution</CardTitle>
-            <p className="text-xs text-slate-400">Click a stage to see which cases are in it · non-dispatch = in progress at that stage · dispatch = completed</p>
+            <p className="text-xs text-slate-400">Click a stage to see which cases are in it · dispatch/fees_received = completed</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
               {PROJECT_STAGES.map((stage) => {
-                const isDispatch = stage.value === "dispatch";
+                const isDispatch = stage.value === "dispatch" || stage.value === "fees_received";
                 const denominator = isDispatch ? total : activeCases;
                 const pct = denominator > 0 ? Math.round((counts[stage.value] / denominator) * 100) : 0;
                 const stageProjects = projectsByStage[stage.value];
@@ -437,7 +439,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-2">
             {assignments.slice(0, 5).map((a: any) => {
-              const routes: Record<string, string> = { survey: "survey", rate_verification: "rate-verification", drafting: "drafting", checking: "checking", print: "print", scan: "scan", dispatch: "dispatch" };
+              const routes: Record<string, string> = { survey: "survey", rate_verification: "rate-verification", drafting: "drafting", checking: "checking", print: "print", scan: "scan", dispatch: "dispatch", fees_received: "fees-received" };
               const route = routes[a.stage];
               return (
                 <Link key={a.id} href={route ? `/projects/${a.projects?.id}/${route}` : `/projects/${a.projects?.id}`}>

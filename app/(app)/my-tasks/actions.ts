@@ -12,7 +12,7 @@ import { z } from "zod";
 
 const SubmitRequestSchema = z.object({
   project_id: z.string().uuid().optional(),
-  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]).optional(),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]).optional(),
   message: z.string().min(1).max(2000),
 });
 

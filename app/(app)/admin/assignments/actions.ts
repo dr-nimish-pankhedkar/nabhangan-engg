@@ -15,7 +15,7 @@ const UUIDSchema = z.string().uuid();
 const CreateAssignmentSchema = z.object({
   project_id: z.string().uuid(),
   user_id: z.string().uuid(),
-  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]),
 });
 
 const ReviewRequestSchema = z.object({

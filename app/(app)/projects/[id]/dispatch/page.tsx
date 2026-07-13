@@ -10,7 +10,7 @@ import DispatchClient from "./dispatch-client";
 import StagePendingCard from "../stage-pending-card";
 import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
-const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
+const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"];
 const THIS_STAGE_IDX = 7; // dispatch
 
 export default async function DispatchPage({ params }: { params: Promise<{ id: string }> }) {

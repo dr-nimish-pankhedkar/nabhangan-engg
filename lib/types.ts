@@ -5,7 +5,7 @@
  */
 
 export type UserRole = "admin" | "staff" | "third_party";
-export type ProjectStatus = "lead" | "survey" | "rate_verification" | "drafting" | "checking" | "print" | "scan" | "dispatch";
+export type ProjectStatus = "lead" | "survey" | "rate_verification" | "drafting" | "checking" | "print" | "scan" | "dispatch" | "fees_received";
 
 export interface Profile {
   id: string;
@@ -111,6 +111,7 @@ export const PROJECT_STAGES: { value: ProjectStatus; label: string }[] = [
   { value: "print", label: "Print" },
   { value: "scan", label: "Scan" },
   { value: "dispatch", label: "Dispatch" },
+  { value: "fees_received", label: "Fees Received" },
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -128,6 +129,7 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
   print: "bg-indigo-100 text-indigo-700",
   scan: "bg-violet-100 text-violet-700",
   dispatch: "bg-green-100 text-green-700",
+  fees_received: "bg-teal-100 text-teal-700",
 };
 
 export interface StaffDocument {

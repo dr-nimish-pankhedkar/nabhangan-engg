@@ -11,7 +11,7 @@ import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
 const ProjectIdSchema = z.string().uuid();
-const StatusSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]);
+const StatusSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]);
 
 const UpdateProjectSchema = z.object({
   bank_name: z.string().min(1).max(200),
@@ -22,7 +22,7 @@ const UpdateProjectSchema = z.object({
 });
 
 const AssignmentSchema = z.object({
-  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]),
+  stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]),
   user_id: z.string().uuid(),
 });
 

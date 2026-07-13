@@ -11,7 +11,7 @@ import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
 const UUIDSchema = z.string().uuid();
-const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"]);
+const StageSchema = z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]);
 
 const LogFileSchema = z.object({
   projectId: z.string().uuid(),
@@ -95,7 +95,7 @@ export async function advanceStage(projectId: string, newStatus: ProjectStatus):
 
   const { data: proj } = await supabase.from("projects").select("status").eq("id", projectId).single();
   if (!proj) return { error: "Project not found." };
-  if (proj.status !== "dispatch") return { error: "Project is not at the Dispatch stage." };
+  if (proj.status !== "dispatch") return { error: "Project is not yet at the Dispatch stage." };
 
   const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };

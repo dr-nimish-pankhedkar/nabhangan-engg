@@ -22,7 +22,7 @@ const submitSchema = z.object({
   notes: z.string().optional(),
 });
 
-export default function DispatchClient({ projectId, userId, isLocked }: { projectId: string; userId: string; isLocked: boolean }) {
+export default function FeesReceivedClient({ projectId, userId, isLocked }: { projectId: string; userId: string; isLocked: boolean }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export default function DispatchClient({ projectId, userId, isLocked }: { projec
     try {
       const hours = parseFloat(data.hours_spent || "");
       if (hours > 0) {
-        const timeResult = await logTime({ projectId, userId, stage: "dispatch", hours_spent: hours, notes: data.notes || null });
+        const timeResult = await logTime({ projectId, userId, stage: "fees_received", hours_spent: hours, notes: data.notes || null });
         if (timeResult.error) { setError(timeResult.error); return; }
       }
       const result = await advanceStage(projectId, "fees_received");
@@ -47,11 +47,11 @@ export default function DispatchClient({ projectId, userId, isLocked }: { projec
 
   if (isLocked) {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4">
-        <LockKeyhole className="h-5 w-5 text-green-600 shrink-0" />
+      <div className="flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 px-4 py-4">
+        <LockKeyhole className="h-5 w-5 text-teal-600 shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-green-700">Case Dispatched & Locked</p>
-          <p className="text-xs text-green-600/80">Dispatch has been recorded. Contact admin to re-open if changes are needed.</p>
+          <p className="text-sm font-semibold text-teal-700">Fees Received & Locked</p>
+          <p className="text-xs text-teal-600/80">Fees receipt has been recorded. Contact admin to re-open if changes are needed.</p>
         </div>
       </div>
     );
@@ -71,16 +71,16 @@ export default function DispatchClient({ projectId, userId, isLocked }: { projec
             )} />
             <FormField control={form.control} name="notes" render={({ field }) => (
               <FormItem>
-                <FormLabel>Dispatch Notes <span className="text-xs font-normal text-slate-400">(optional)</span></FormLabel>
-                <FormControl><Input placeholder="e.g. Courier name, tracking number…" {...field} /></FormControl>
+                <FormLabel>Fees Notes <span className="text-xs font-normal text-slate-400">(optional)</span></FormLabel>
+                <FormControl><Input placeholder="e.g. Payment reference, amount…" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button type="submit" disabled={submitting} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white gap-2">
+          <Button type="submit" disabled={submitting} className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white gap-2">
             <CheckCircle className="h-4 w-4" />
-            {submitting ? "Submitting…" : "Mark as Dispatched"}
+            {submitting ? "Submitting…" : "Mark Fees as Received"}
           </Button>
         </form>
       </Form>

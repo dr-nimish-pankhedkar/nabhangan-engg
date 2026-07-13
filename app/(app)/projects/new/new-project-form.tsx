@@ -49,6 +49,7 @@ const ASSIGNABLE_STAGES = [
   { value: "print", label: "Print" },
   { value: "scan", label: "Scan" },
   { value: "dispatch", label: "Dispatch" },
+  { value: "fees_received", label: "Fees Received" },
 ];
 
 const schema = z.object({

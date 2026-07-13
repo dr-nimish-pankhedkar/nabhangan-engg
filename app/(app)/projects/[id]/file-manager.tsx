@@ -20,6 +20,7 @@ const STAGE_LABEL: Record<string, string> = {
   print: "Print",
   scan: "Scan",
   dispatch: "Dispatch",
+  fees_received: "Fees Recv.",
 };
 
 interface FileItem {

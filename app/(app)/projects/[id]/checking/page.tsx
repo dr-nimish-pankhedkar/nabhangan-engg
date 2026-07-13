@@ -11,7 +11,7 @@ import StagePendingCard from "../stage-pending-card";
 import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
 
 const BUCKET = "project-files";
-const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch"];
+const STAGE_ORDER = ["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"];
 const THIS_STAGE_IDX = 4; // checking
 
 export default async function CheckingPage({ params }: { params: Promise<{ id: string }> }) {
