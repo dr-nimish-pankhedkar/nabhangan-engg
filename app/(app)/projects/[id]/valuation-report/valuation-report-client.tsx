@@ -205,6 +205,9 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
           <Field label="Plot Area" value={v(r, bm, "plot_area")} />
           <Field label="Carpet Area" value={v(r, bm, "carpet_area")} />
           <Field label="Built-up Area" value={v(r, bm, "builtup_area")} />
+          <Field label="Balcony Area" value={v(r, bm, "balcony_area")} />
+          <Field label="Parking Area" value={v(r, bm, "parking_area")} />
+          <Field label="Terrace Area" value={v(r, bm, "terrace_area")} />
         </FieldGrid>
 
         {/* 6 — Property Details */}

@@ -82,6 +82,9 @@ const schema = z.object({
   plot_area: z.string().optional(),
   carpet_area: z.string().optional(),
   builtup_area: z.string().optional(),
+  balcony_area: z.string().optional(),
+  parking_area: z.string().optional(),
+  terrace_area: z.string().optional(),
   construction_stage: z.string().optional(),
   use_of_property: z.string().optional(),
   age_of_building: z.string().optional(),
@@ -198,6 +201,9 @@ export default function NewProjectForm({
       plot_area: data.plot_area || "",
       carpet_area: data.carpet_area || "",
       builtup_area: data.builtup_area || "",
+      balcony_area: data.balcony_area || "",
+      parking_area: data.parking_area || "",
+      terrace_area: data.terrace_area || "",
       construction_stage: data.construction_stage || "",
       use_of_property: data.use_of_property || "",
       age_of_building: data.age_of_building || "",
@@ -483,6 +489,15 @@ export default function NewProjectForm({
                       )} />
                       <FormField control={F.control} name="builtup_area" render={({ field }) => (
                         <FormItem><FormLabel>B/Up Area</FormLabel><FormControl><Input placeholder="e.g. 85 sq.mt" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="balcony_area" render={({ field }) => (
+                        <FormItem><FormLabel>Balcony Area</FormLabel><FormControl><Input placeholder="e.g. 10 sq.mt" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="parking_area" render={({ field }) => (
+                        <FormItem><FormLabel>Parking Area</FormLabel><FormControl><Input placeholder="e.g. 12 sq.mt" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={F.control} name="terrace_area" render={({ field }) => (
+                        <FormItem><FormLabel>Terrace Area</FormLabel><FormControl><Input placeholder="e.g. 20 sq.mt" {...field} /></FormControl></FormItem>
                       )} />
                     </div>
                   </SubSection>

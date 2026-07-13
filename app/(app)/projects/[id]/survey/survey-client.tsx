@@ -35,6 +35,9 @@ const schema = z.object({
   plot_area: z.string().optional(),
   carpet_area: z.string().optional(),
   builtup_area: z.string().optional(),
+  balcony_area: z.string().optional(),
+  parking_area: z.string().optional(),
+  terrace_area: z.string().optional(),
   construction_stage: z.string().optional(),
   use_of_property: z.string().optional(),
   age_of_building: z.string().optional(),
@@ -198,6 +201,9 @@ export default function SurveyStageClient({
       plot_area: d(existingReport, m, "plot_area"),
       carpet_area: d(existingReport, m, "carpet_area"),
       builtup_area: d(existingReport, m, "builtup_area"),
+      balcony_area: d(existingReport, m, "balcony_area"),
+      parking_area: d(existingReport, m, "parking_area"),
+      terrace_area: d(existingReport, m, "terrace_area"),
       construction_stage: d(existingReport, m, "construction_stage"),
       use_of_property: d(existingReport, m, "use_of_property"),
       age_of_building: d(existingReport, m, "age_of_building"),
@@ -571,6 +577,17 @@ export default function SurveyStageClient({
           <Row>
             <FormField control={F.control} name="builtup_area" render={({ field }) => (
               <FormItem><FormLabel>B/Up Area (Built-up)</FormLabel><FormControl><Input placeholder="e.g. 85 sq.mt" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={F.control} name="balcony_area" render={({ field }) => (
+              <FormItem><FormLabel>Balcony Area</FormLabel><FormControl><Input placeholder="e.g. 10 sq.mt" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+          </Row>
+          <Row>
+            <FormField control={F.control} name="parking_area" render={({ field }) => (
+              <FormItem><FormLabel>Parking Area</FormLabel><FormControl><Input placeholder="e.g. 12 sq.mt" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={F.control} name="terrace_area" render={({ field }) => (
+              <FormItem><FormLabel>Terrace Area</FormLabel><FormControl><Input placeholder="e.g. 20 sq.mt" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
           </Row>
         </Section>
