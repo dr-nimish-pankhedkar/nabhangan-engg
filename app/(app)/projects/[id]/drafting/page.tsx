@@ -49,12 +49,12 @@ export default async function DraftingPage({ params }: { params: Promise<{ id: s
     );
   }
 
-  const photosWithUrls = await Promise.all(
-    (surveyPhotosRes.data || []).map(async (photo: any) => {
-      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(photo.file_path, 31536000);
-      return { ...photo, signedUrl: data?.signedUrl || null };
-    })
-  );
+  const rawPhotos = surveyPhotosRes.data || [];
+  const { data: signedUrlsData } = rawPhotos.length > 0
+    ? await supabase.storage.from(BUCKET).createSignedUrls(rawPhotos.map((p: any) => p.file_path), 31536000)
+    : { data: [] };
+  const urlMap = Object.fromEntries((signedUrlsData || []).map((r: any) => [r.path, r.signedUrl]));
+  const photosWithUrls = rawPhotos.map((photo: any) => ({ ...photo, signedUrl: urlMap[photo.file_path] || null }));
 
   const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
 

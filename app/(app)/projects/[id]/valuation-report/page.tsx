@@ -33,12 +33,12 @@ export default async function ValuationReportPage({ params }: { params: Promise<
   const bm: Record<string, string> = (project.bank_metadata as Record<string, string>) || {};
   const report: Record<string, string> = svrRes.data?.data || {};
 
-  const photos = await Promise.all(
-    (photosRes.data || []).map(async (f: any) => {
-      const { data } = await supabase.storage.from("project-files").createSignedUrl(f.file_path, 3600);
-      return { id: f.id, file_name: f.file_name, signedUrl: data?.signedUrl || null };
-    })
-  );
+  const rawPhotos = photosRes.data || [];
+  const { data: signedUrlsData } = rawPhotos.length > 0
+    ? await supabase.storage.from("project-files").createSignedUrls(rawPhotos.map((f: any) => f.file_path), 3600)
+    : { data: [] };
+  const urlMap = Object.fromEntries((signedUrlsData || []).map((r: any) => [r.path, r.signedUrl]));
+  const photos = rawPhotos.map((f: any) => ({ id: f.id, file_name: f.file_name, signedUrl: urlMap[f.file_path] || null }));
 
   return (
     <ValuationReportClient

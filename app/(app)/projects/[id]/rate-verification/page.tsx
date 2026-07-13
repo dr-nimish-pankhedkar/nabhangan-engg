@@ -49,12 +49,12 @@ export default async function RateVerificationPage({ params }: { params: Promise
 
   const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
 
-  const refFiles = await Promise.all(
-    (prevFilesRes.data || []).map(async (f: any) => {
-      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(f.file_path, 31536000);
-      return { ...f, signedUrl: data?.signedUrl || null };
-    })
-  );
+  const rawRefFiles = prevFilesRes.data || [];
+  const { data: signedUrlsData } = rawRefFiles.length > 0
+    ? await supabase.storage.from(BUCKET).createSignedUrls(rawRefFiles.map((f: any) => f.file_path), 31536000)
+    : { data: [] };
+  const urlMap = Object.fromEntries((signedUrlsData || []).map((r: any) => [r.path, r.signedUrl]));
+  const refFiles = rawRefFiles.map((f: any) => ({ ...f, signedUrl: urlMap[f.file_path] || null }));
 
   return (
     <div className="max-w-2xl">

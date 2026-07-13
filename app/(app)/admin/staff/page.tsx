@@ -22,14 +22,12 @@ export default async function AdminStaffPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/dashboard");
 
-  const { data: staff } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("full_name");
-
-  const { data: timelogs } = await supabase.from("time_logs").select("user_id, hours_spent");
-  const { data: assignments } = await supabase.from("project_assignments").select("user_id, project_id");
-  const { data: docs } = await supabase.from("staff_documents").select("user_id");
+  const [{ data: staff }, { data: timelogs }, { data: assignments }, { data: docs }] = await Promise.all([
+    supabase.from("profiles").select("*").order("full_name"),
+    supabase.from("time_logs").select("user_id, hours_spent"),
+    supabase.from("project_assignments").select("user_id, project_id"),
+    supabase.from("staff_documents").select("user_id"),
+  ]);
 
   const hoursByUser = (timelogs || []).reduce((acc: Record<string, number>, t: any) => {
     acc[t.user_id] = (acc[t.user_id] || 0) + Number(t.hours_spent);

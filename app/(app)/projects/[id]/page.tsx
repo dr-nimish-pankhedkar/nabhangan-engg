@@ -78,12 +78,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   ]);
 
   const rawFiles = filesRes.data || [];
-  const files = await Promise.all(
-    rawFiles.map(async (f: any) => {
-      const { data } = await admin.storage.from("project-files").createSignedUrl(f.file_path, 31536000);
-      return { ...f, signedUrl: data?.signedUrl || null };
-    })
-  );
+  const { data: signedUrlsData } = rawFiles.length > 0
+    ? await admin.storage.from("project-files").createSignedUrls(rawFiles.map((f: any) => f.file_path), 31536000)
+    : { data: [] };
+  const urlMap = Object.fromEntries((signedUrlsData || []).map((r: any) => [r.path, r.signedUrl]));
+  const files = rawFiles.map((f: any) => ({ ...f, signedUrl: urlMap[f.file_path] || null }));
   const responses = responsesRes.data || [];
   const timelogs = timelogsRes.data || [];
   const assignments = assignmentsRes.data || [];
