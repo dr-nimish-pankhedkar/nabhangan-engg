@@ -55,8 +55,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
 
   const { id } = await params;
+  const isAdmin = profile?.role === "admin";
 
-  const { data: project } = await supabase
+  const admin = await createAdminClient();
+
+  // Use admin client so staff who created a project (but aren't yet assigned) can still view it.
+  // Access is enforced manually below.
+  const { data: project } = await admin
     .from("projects")
     .select("*, profiles(full_name)")
     .eq("id", id)
@@ -64,10 +69,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!project) notFound();
 
-  const isAdmin = profile?.role === "admin";
-  const currentStageIdx = STAGE_ORDER.indexOf(project.status);
+  // Non-admin can only view projects they created or are assigned to
+  if (!isAdmin) {
+    const { data: assignment } = await supabase
+      .from("project_assignments")
+      .select("id")
+      .eq("project_id", id)
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
+    if (!assignment && project.created_by !== user.id) notFound();
+  }
 
-  const admin = await createAdminClient();
+  const currentStageIdx = STAGE_ORDER.indexOf(project.status);
 
   const [filesRes, responsesRes, timelogsRes, assignmentsRes, submissionsRes] = await Promise.all([
     admin.from("project_files").select("*, profiles(full_name)").eq("project_id", id).order("uploaded_at", { ascending: false }),
