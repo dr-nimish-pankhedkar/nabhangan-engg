@@ -52,6 +52,11 @@ const schema = z.object({
   boundary_west: z.string().optional(),
   boundary_north: z.string().optional(),
   boundary_south: z.string().optional(),
+  flat_facing: z.string().optional(),
+  flat_boundary_east: z.string().optional(),
+  flat_boundary_west: z.string().optional(),
+  flat_boundary_north: z.string().optional(),
+  flat_boundary_south: z.string().optional(),
   person_met: z.string().optional(),
   person_met_mob: z.string().optional(),
   site_visit_by: z.string().optional(),
@@ -94,6 +99,42 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>;
+}
+
+function SelectWithOther({ value, onChange, options, placeholder }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: readonly string[];
+  placeholder?: string;
+}) {
+  const isKnown = options.includes(value as any) || value === "";
+  const [isOther, setIsOther] = useState(!isKnown && value !== "");
+  return (
+    <div className="space-y-1.5">
+      <Select
+        onValueChange={(v) => {
+          if (v === "__other__") { setIsOther(true); onChange(""); }
+          else { setIsOther(false); onChange(v); }
+        }}
+        value={isOther ? "__other__" : (value || "")}
+      >
+        <SelectTrigger><SelectValue placeholder={placeholder || "Select…"} /></SelectTrigger>
+        <SelectContent>
+          {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          <SelectItem value="__other__">Others</SelectItem>
+        </SelectContent>
+      </Select>
+      {isOther && (
+        <Input
+          placeholder="Specify…"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 text-sm"
+          autoFocus
+        />
+      )}
+    </div>
+  );
 }
 
 function ReadOnlyRow({ label, value }: { label: string; value: string }) {
@@ -153,6 +194,11 @@ export default function ThirdPartySurveyClient({
       boundary_west: d(existingReport, m, "boundary_west"),
       boundary_north: d(existingReport, m, "boundary_north"),
       boundary_south: d(existingReport, m, "boundary_south"),
+      flat_facing: d(existingReport, m, "flat_facing"),
+      flat_boundary_east: d(existingReport, m, "flat_boundary_east"),
+      flat_boundary_west: d(existingReport, m, "flat_boundary_west"),
+      flat_boundary_north: d(existingReport, m, "flat_boundary_north"),
+      flat_boundary_south: d(existingReport, m, "flat_boundary_south"),
       person_met: d(existingReport, m, "person_met"),
       person_met_mob: d(existingReport, m, "person_met_mob"),
       site_visit_by: d(existingReport, m, "site_visit_by"),
@@ -372,32 +418,58 @@ export default function ThirdPartySurveyClient({
               </Button>
             </div>
           </div>
-          <Row>
+          {/* Plot sub-section */}
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 space-y-3">
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Plot</p>
             <FormField control={F.control} name="facing" render={({ field }) => (
               <FormItem>
                 <FormLabel>Facing</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select direction" /></SelectTrigger></FormControl>
-                  <SelectContent>{FACING_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                </Select>
+                <SelectWithOther value={field.value || ""} onChange={field.onChange} options={FACING_OPTIONS} placeholder="Select direction" />
                 <FormMessage />
               </FormItem>
             )} />
-          </Row>
-          <p className="text-xs text-slate-400 font-medium mt-1">Boundaries</p>
-          <div className="grid grid-cols-2 gap-3">
-            <FormField control={F.control} name="boundary_east" render={({ field }) => (
-              <FormItem><FormLabel className="text-xs">East</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+            <p className="text-xs text-slate-400 font-medium">Boundaries</p>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField control={F.control} name="boundary_east" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">East</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={F.control} name="boundary_west" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">West</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={F.control} name="boundary_north" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">North</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={F.control} name="boundary_south" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">South</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+            </div>
+          </div>
+
+          {/* Flat / Shop sub-section */}
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 space-y-3">
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Flat / Shop</p>
+            <FormField control={F.control} name="flat_facing" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Facing</FormLabel>
+                <SelectWithOther value={field.value || ""} onChange={field.onChange} options={FACING_OPTIONS} placeholder="Select direction" />
+                <FormMessage />
+              </FormItem>
             )} />
-            <FormField control={F.control} name="boundary_west" render={({ field }) => (
-              <FormItem><FormLabel className="text-xs">West</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-            )} />
-            <FormField control={F.control} name="boundary_north" render={({ field }) => (
-              <FormItem><FormLabel className="text-xs">North</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-            )} />
-            <FormField control={F.control} name="boundary_south" render={({ field }) => (
-              <FormItem><FormLabel className="text-xs">South</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-            )} />
+            <p className="text-xs text-slate-400 font-medium">Boundaries</p>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField control={F.control} name="flat_boundary_east" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">East</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={F.control} name="flat_boundary_west" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">West</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={F.control} name="flat_boundary_north" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">North</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={F.control} name="flat_boundary_south" render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">South</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+            </div>
           </div>
         </Section>
 
@@ -476,29 +548,20 @@ export default function ThirdPartySurveyClient({
             <FormField control={F.control} name="lift" render={({ field }) => (
               <FormItem>
                 <FormLabel>Lift</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
-                </Select>
+                <SelectWithOther value={field.value || ""} onChange={field.onChange} options={["Yes", "No"]} placeholder="Select" />
               </FormItem>
             )} />
             <FormField control={F.control} name="parking" render={({ field }) => (
               <FormItem>
                 <FormLabel>Parking</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
-                </Select>
+                <SelectWithOther value={field.value || ""} onChange={field.onChange} options={["Yes", "No"]} placeholder="Select" />
               </FormItem>
             )} />
           </div>
           <FormField control={F.control} name="rcc_type" render={({ field }) => (
             <FormItem>
               <FormLabel>Construction Type</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select construction type" /></SelectTrigger></FormControl>
-                <SelectContent>{RCC_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-              </Select>
+              <SelectWithOther value={field.value || ""} onChange={field.onChange} options={RCC_OPTIONS} placeholder="Select construction type" />
               <FormMessage />
             </FormItem>
           )} />
@@ -513,10 +576,7 @@ export default function ThirdPartySurveyClient({
             <FormField control={F.control} name="valuation_method" render={({ field }) => (
               <FormItem>
                 <FormLabel>Method Adopted</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger></FormControl>
-                  <SelectContent>{VALUATION_METHODS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
-                </Select>
+                <SelectWithOther value={field.value || ""} onChange={field.onChange} options={VALUATION_METHODS} placeholder="Select method" />
                 <FormMessage />
               </FormItem>
             )} />
