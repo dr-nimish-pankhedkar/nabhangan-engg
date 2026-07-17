@@ -238,6 +238,7 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
 
         {/* 8 — Facing & Boundaries */}
         <SectionHeading n={8}>Facing &amp; Boundaries</SectionHeading>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 mb-1 print:text-[8px]">Plot</p>
         <FieldGrid cols={4}>
           <Field label="Facing Direction" value={v(r, bm, "facing")} />
           <Field label="" value="" />
@@ -247,6 +248,17 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
           <Field label="West Boundary" value={v(r, bm, "boundary_west")} />
           <Field label="North Boundary" value={v(r, bm, "boundary_north")} />
           <Field label="South Boundary" value={v(r, bm, "boundary_south")} />
+        </FieldGrid>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 mt-3 mb-1 print:text-[8px]">Flat / Shop</p>
+        <FieldGrid cols={4}>
+          <Field label="Facing Direction" value={v(r, bm, "flat_facing")} />
+          <Field label="" value="" />
+          <Field label="" value="" />
+          <Field label="" value="" />
+          <Field label="East Boundary" value={v(r, bm, "flat_boundary_east")} />
+          <Field label="West Boundary" value={v(r, bm, "flat_boundary_west")} />
+          <Field label="North Boundary" value={v(r, bm, "flat_boundary_north")} />
+          <Field label="South Boundary" value={v(r, bm, "flat_boundary_south")} />
         </FieldGrid>
 
         {/* 9 — Valuation Summary */}

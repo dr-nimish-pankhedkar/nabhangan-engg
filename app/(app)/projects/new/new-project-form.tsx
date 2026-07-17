@@ -105,6 +105,11 @@ const schema = z.object({
   boundary_west: z.string().optional(),
   boundary_north: z.string().optional(),
   boundary_south: z.string().optional(),
+  flat_facing: z.string().optional(),
+  flat_boundary_east: z.string().optional(),
+  flat_boundary_west: z.string().optional(),
+  flat_boundary_north: z.string().optional(),
+  flat_boundary_south: z.string().optional(),
   nearby_rate: z.string().optional(),
   valuation_method: z.string().optional(),
   plot_area_val: z.string().optional(),
@@ -144,6 +149,42 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
     <div className="space-y-3">
       <p className="text-xs font-medium text-slate-400 uppercase tracking-wide border-t border-slate-100 pt-3">{title}</p>
       {children}
+    </div>
+  );
+}
+
+function SelectWithOther({ value, onChange, options, placeholder }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: readonly string[];
+  placeholder?: string;
+}) {
+  const isKnown = options.includes(value as any) || value === "";
+  const [isOther, setIsOther] = useState(!isKnown && value !== "");
+  return (
+    <div className="space-y-1.5">
+      <Select
+        onValueChange={(v) => {
+          if (v === "__other__") { setIsOther(true); onChange(""); }
+          else { setIsOther(false); onChange(v); }
+        }}
+        value={isOther ? "__other__" : (value || "")}
+      >
+        <SelectTrigger><SelectValue placeholder={placeholder || "Select…"} /></SelectTrigger>
+        <SelectContent>
+          {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          <SelectItem value="__other__">Others</SelectItem>
+        </SelectContent>
+      </Select>
+      {isOther && (
+        <Input
+          placeholder="Specify…"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 text-sm"
+          autoFocus
+        />
+      )}
     </div>
   );
 }
@@ -224,6 +265,11 @@ export default function NewProjectForm({
       boundary_west: data.boundary_west || "",
       boundary_north: data.boundary_north || "",
       boundary_south: data.boundary_south || "",
+      flat_facing: data.flat_facing || "",
+      flat_boundary_east: data.flat_boundary_east || "",
+      flat_boundary_west: data.flat_boundary_west || "",
+      flat_boundary_north: data.flat_boundary_north || "",
+      flat_boundary_south: data.flat_boundary_south || "",
       nearby_rate: data.nearby_rate || "",
       valuation_method: data.valuation_method || "",
       plot_area_val: data.plot_area_val || "",
@@ -547,46 +593,54 @@ export default function NewProjectForm({
                       )} />
                       <FormField control={F.control} name="lift" render={({ field }) => (
                         <FormItem><FormLabel>Lift</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
-                          </Select>
+                          <SelectWithOther value={field.value || ""} onChange={field.onChange} options={["Yes", "No"]} placeholder="Select" />
                         </FormItem>
                       )} />
                       <FormField control={F.control} name="parking" render={({ field }) => (
                         <FormItem><FormLabel>Parking</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
-                          </Select>
+                          <SelectWithOther value={field.value || ""} onChange={field.onChange} options={["Yes", "No"]} placeholder="Select" />
                         </FormItem>
                       )} />
                     </div>
                     <FormField control={F.control} name="rcc_type" render={({ field }) => (
                       <FormItem><FormLabel>Construction Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                          <SelectContent>{RCC_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                        </Select>
+                        <SelectWithOther value={field.value || ""} onChange={field.onChange} options={RCC_OPTIONS} placeholder="Select type" />
                       </FormItem>
                     )} />
                   </SubSection>
 
                   <SubSection title="Facing &amp; Boundaries">
-                    <FormField control={F.control} name="facing" render={({ field }) => (
-                      <FormItem><FormLabel>Facing</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select direction" /></SelectTrigger></FormControl>
-                          <SelectContent>{FACING_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
-                    <div className="grid grid-cols-2 gap-3">
-                      {(["east", "west", "north", "south"] as const).map((dir) => (
-                        <FormField key={dir} control={F.control} name={`boundary_${dir}` as any} render={({ field }) => (
-                          <FormItem><FormLabel className="capitalize">{dir}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <div className="space-y-4">
+                      <div className="rounded-md border p-3 space-y-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Plot</p>
+                        <FormField control={F.control} name="facing" render={({ field }) => (
+                          <FormItem><FormLabel>Facing</FormLabel>
+                            <SelectWithOther value={field.value || ""} onChange={field.onChange} options={FACING_OPTIONS} placeholder="Select direction" />
+                          </FormItem>
                         )} />
-                      ))}
+                        <div className="grid grid-cols-2 gap-3">
+                          {(["east", "west", "north", "south"] as const).map((dir) => (
+                            <FormField key={dir} control={F.control} name={`boundary_${dir}` as any} render={({ field }) => (
+                              <FormItem><FormLabel className="capitalize">{dir}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                            )} />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-md border p-3 space-y-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Flat / Shop</p>
+                        <FormField control={F.control} name="flat_facing" render={({ field }) => (
+                          <FormItem><FormLabel>Facing</FormLabel>
+                            <SelectWithOther value={field.value || ""} onChange={field.onChange} options={FACING_OPTIONS} placeholder="Select direction" />
+                          </FormItem>
+                        )} />
+                        <div className="grid grid-cols-2 gap-3">
+                          {(["east", "west", "north", "south"] as const).map((dir) => (
+                            <FormField key={dir} control={F.control} name={`flat_boundary_${dir}` as any} render={({ field }) => (
+                              <FormItem><FormLabel className="capitalize">{dir}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                            )} />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </SubSection>
 
@@ -597,10 +651,7 @@ export default function NewProjectForm({
                       )} />
                       <FormField control={F.control} name="valuation_method" render={({ field }) => (
                         <FormItem><FormLabel>Method Adopted</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger></FormControl>
-                            <SelectContent>{VALUATION_METHODS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
-                          </Select>
+                          <SelectWithOther value={field.value || ""} onChange={field.onChange} options={VALUATION_METHODS} placeholder="Select method" />
                         </FormItem>
                       )} />
                     </Row>
