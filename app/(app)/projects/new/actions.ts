@@ -36,15 +36,14 @@ export async function createProject(input: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).single();
   if (!profile) return { error: "Profile not found" };
-
-  const isAdmin = profile.role === "admin";
+  if (!profile.is_active) return { error: "Account is inactive." };
 
   const parsed = CreateProjectSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
 
-  const hasSurveyAssignment = isAdmin && parsed.data.assignments?.some((a) => a.stage === "survey");
+  const hasSurveyAssignment = parsed.data.assignments?.some((a) => a.stage === "survey");
 
   const admin = await createAdminClient();
 
@@ -58,7 +57,7 @@ export async function createProject(input: {
       bank_metadata: parsed.data.bank_metadata,
       created_by: user.id,
       status: hasSurveyAssignment ? "survey" : "lead",
-      requires_review: !isAdmin,
+      requires_review: false,
       documents_pending: false,
     })
     .select("id")
@@ -67,8 +66,7 @@ export async function createProject(input: {
 
   const projectId = data.id;
 
-  // Only admin can assign staff at creation time
-  if (isAdmin && parsed.data.assignments && parsed.data.assignments.length > 0) {
+  if (parsed.data.assignments && parsed.data.assignments.length > 0) {
     const { error: assignError } = await admin.from("project_assignments").insert(
       parsed.data.assignments.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
     );

@@ -23,10 +23,7 @@ export default async function NewProjectPage() {
 
   const isAdmin = profile.role === "admin";
 
-  // Only admin sees the staff list (for stage assignments)
-  const staff = isAdmin
-    ? (await supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name")).data || []
-    : [];
+  const staff = (await supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name")).data || [];
 
   return (
     <div className="max-w-2xl">

@@ -33,6 +33,7 @@ const adminNav: NavItem[] = [
 const staffNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Cases", icon: FolderKanban },
+  { href: "/admin/assignments", label: "Assignments", icon: UserCheck },
   { href: "/my-tasks", label: "My Tasks", icon: ClipboardList },
 ];
 

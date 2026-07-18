@@ -31,8 +31,8 @@ export async function createAssignment(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Forbidden" };
+  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).single();
+  if (!profile?.is_active) return { error: "Account is inactive." };
 
   const parsed = CreateAssignmentSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
@@ -59,8 +59,8 @@ export async function reviewTaskRequest(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Forbidden" };
+  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).single();
+  if (!profile?.is_active) return { error: "Account is inactive." };
 
   const parsed = ReviewRequestSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
@@ -77,8 +77,8 @@ export async function removeAssignment(assignmentId: string): Promise<{ error?: 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Forbidden" };
+  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).single();
+  if (!profile?.is_active) return { error: "Account is inactive." };
   if (!UUIDSchema.safeParse(assignmentId).success) return { error: "Invalid ID" };
   const { error } = await supabase.from("project_assignments").delete().eq("id", assignmentId);
   if (error) return { error: error.message };

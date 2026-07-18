@@ -297,11 +297,9 @@ export default function NewProjectForm({
       (bankMetadata as any).custom_fields = customFields;
     }
 
-    const assignmentsInput = isAdmin
-      ? Object.entries(data.assignments || {})
-          .filter(([, uid]) => uid && uid !== "none" && uid !== TP_VALUE && uid.length > 0)
-          .map(([stage, uid]) => ({ stage, user_id: uid as string }))
-      : [];
+    const assignmentsInput = Object.entries(data.assignments || {})
+      .filter(([, uid]) => uid && uid !== "none" && uid !== TP_VALUE && uid.length > 0)
+      .map(([stage, uid]) => ({ stage, user_id: uid as string }));
 
     const result = await createProject({
       bank_name: data.bank_name,
@@ -378,14 +376,6 @@ export default function NewProjectForm({
   return (
     <Card className="border-slate-200">
       <CardContent className="pt-6">
-        {!isAdmin && (
-          <div className="flex items-start gap-2 mb-5 rounded-md bg-blue-50 border border-blue-200 px-4 py-3">
-            <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-blue-700">
-              This case will be sent to admin for review and staff assignment before becoming active.
-            </p>
-          </div>
-        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
@@ -798,7 +788,7 @@ export default function NewProjectForm({
             </div>
 
             {/* Staff Assignments */}
-            {isAdmin && (
+            {staff.length > 0 && (
               <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-1">
                   <UserCheck className="h-4 w-4 text-[#1e3a5f]" />
