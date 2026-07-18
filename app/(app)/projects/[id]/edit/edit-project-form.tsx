@@ -112,9 +112,11 @@ const schema = z.object({
   valuation_method: z.string().optional(),
   plot_area_val: z.string().optional(),
   plot_rate: z.string().optional(),
+  plot_loading_factor: z.string().optional(),
   plot_valuation: z.string().optional(),
   builtup_area_val: z.string().optional(),
   builtup_rate: z.string().optional(),
+  builtup_loading_factor: z.string().optional(),
   builtup_valuation: z.string().optional(),
   extra_items: z.string().optional(),
   final_valuation: z.string().optional(),
@@ -192,6 +194,13 @@ function SelectWithOther({ value, onChange, options, placeholder }: {
 }
 
 function str(v: unknown): string { return typeof v === "string" ? v : ""; }
+
+function calcVal(area: string, rate: string, lf: string): string {
+  const a = parseFloat(area) || 0;
+  const r = parseFloat(rate) || 0;
+  const l = parseFloat(lf) || 1;
+  return a && r ? String(Math.round(a * r * l)) : "";
+}
 
 export default function EditProjectForm({
   projectId,
@@ -278,9 +287,11 @@ export default function EditProjectForm({
       valuation_method: str(m.valuation_method),
       plot_area_val: str(m.plot_area_val),
       plot_rate: str(m.plot_rate),
+      plot_loading_factor: str(m.plot_loading_factor),
       plot_valuation: str(m.plot_valuation),
       builtup_area_val: str(m.builtup_area_val),
       builtup_rate: str(m.builtup_rate),
+      builtup_loading_factor: str(m.builtup_loading_factor),
       builtup_valuation: str(m.builtup_valuation),
       extra_items: str(m.extra_items),
       final_valuation: str(m.final_valuation),
@@ -356,9 +367,11 @@ export default function EditProjectForm({
       valuation_method: data.valuation_method || "",
       plot_area_val: data.plot_area_val || "",
       plot_rate: data.plot_rate || "",
+      plot_loading_factor: data.plot_loading_factor || "",
       plot_valuation: data.plot_valuation || "",
       builtup_area_val: data.builtup_area_val || "",
       builtup_rate: data.builtup_rate || "",
+      builtup_loading_factor: data.builtup_loading_factor || "",
       builtup_valuation: data.builtup_valuation || "",
       extra_items: data.extra_items || "",
       final_valuation: data.final_valuation || "",
@@ -691,25 +704,65 @@ export default function EditProjectForm({
                         </FormItem>
                       )} />
                     </Row>
-                    <div className="grid grid-cols-3 gap-2">
-                      <FormField control={F.control} name="plot_area_val" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">Plot Area</FormLabel><FormControl><Input placeholder="area" {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={F.control} name="plot_rate" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">× Rate (₹)</FormLabel><FormControl><Input placeholder="rate" {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={F.control} name="plot_valuation" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">= Rs.</FormLabel><FormControl><Input placeholder="value" {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={F.control} name="builtup_area_val" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">B/Up Area</FormLabel><FormControl><Input placeholder="area" {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={F.control} name="builtup_rate" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">× Rate (₹)</FormLabel><FormControl><Input placeholder="rate" {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={F.control} name="builtup_valuation" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs">= Rs.</FormLabel><FormControl><Input placeholder="value" {...field} /></FormControl></FormItem>
-                      )} />
+                    <div className="space-y-2">
+                      <div className="rounded-md bg-slate-50 p-3 space-y-1.5">
+                        <p className="text-xs text-slate-500 font-medium">Plot Area</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          <FormField control={F.control} name="plot_area_val" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">Area</FormLabel><FormControl><Input placeholder="area" {...field} onChange={(e) => {
+                              field.onChange(e);
+                              const v = calcVal(e.target.value, F.getValues("plot_rate"), F.getValues("plot_loading_factor"));
+                              if (v) F.setValue("plot_valuation", v);
+                            }} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={F.control} name="plot_rate" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">× Rate (₹)</FormLabel><FormControl><Input placeholder="rate" {...field} onChange={(e) => {
+                              field.onChange(e);
+                              const v = calcVal(F.getValues("plot_area_val"), e.target.value, F.getValues("plot_loading_factor"));
+                              if (v) F.setValue("plot_valuation", v);
+                            }} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={F.control} name="plot_loading_factor" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">× LF</FormLabel><FormControl><Input placeholder="e.g. 1" {...field} onChange={(e) => {
+                              field.onChange(e);
+                              const v = calcVal(F.getValues("plot_area_val"), F.getValues("plot_rate"), e.target.value);
+                              if (v) F.setValue("plot_valuation", v);
+                            }} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={F.control} name="plot_valuation" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">= Rs.</FormLabel><FormControl><Input placeholder="auto" {...field} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                      </div>
+                      <div className="rounded-md bg-slate-50 p-3 space-y-1.5">
+                        <p className="text-xs text-slate-500 font-medium">B/Up Area</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          <FormField control={F.control} name="builtup_area_val" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">Area</FormLabel><FormControl><Input placeholder="area" {...field} onChange={(e) => {
+                              field.onChange(e);
+                              const v = calcVal(e.target.value, F.getValues("builtup_rate"), F.getValues("builtup_loading_factor"));
+                              if (v) F.setValue("builtup_valuation", v);
+                            }} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={F.control} name="builtup_rate" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">× Rate (₹)</FormLabel><FormControl><Input placeholder="rate" {...field} onChange={(e) => {
+                              field.onChange(e);
+                              const v = calcVal(F.getValues("builtup_area_val"), e.target.value, F.getValues("builtup_loading_factor"));
+                              if (v) F.setValue("builtup_valuation", v);
+                            }} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={F.control} name="builtup_loading_factor" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">× LF</FormLabel><FormControl><Input placeholder="e.g. 1" {...field} onChange={(e) => {
+                              field.onChange(e);
+                              const v = calcVal(F.getValues("builtup_area_val"), F.getValues("builtup_rate"), e.target.value);
+                              if (v) F.setValue("builtup_valuation", v);
+                            }} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={F.control} name="builtup_valuation" render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs">= Rs.</FormLabel><FormControl><Input placeholder="auto" {...field} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                      </div>
                     </div>
                     <Row>
                       <FormField control={F.control} name="extra_items" render={({ field }) => (

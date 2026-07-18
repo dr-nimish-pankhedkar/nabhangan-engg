@@ -274,6 +274,7 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
                 <th className="text-left px-2 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">Item</th>
                 <th className="text-right px-2 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">Area</th>
                 <th className="text-right px-2 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">Rate (₹)</th>
+                <th className="text-right px-2 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">LF</th>
                 <th className="text-right px-2 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">Value (₹)</th>
               </tr>
             </thead>
@@ -282,20 +283,22 @@ export default function ValuationReportClient({ project, bankMetadata: bm, repor
                 <td className="px-2 py-0.5 text-slate-700">Plot</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.plot_area_val || "—"}</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.plot_rate || "—"}</td>
+                <td className="px-2 py-0.5 text-right text-slate-600">{r.plot_loading_factor || "1"}</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.plot_valuation || "—"}</td>
               </tr>
               <tr className="border-b border-slate-100">
                 <td className="px-2 py-0.5 text-slate-700">Built-up Area</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.builtup_area_val || "—"}</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.builtup_rate || "—"}</td>
+                <td className="px-2 py-0.5 text-right text-slate-600">{r.builtup_loading_factor || "1"}</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.builtup_valuation || "—"}</td>
               </tr>
               <tr className="border-b border-slate-100">
-                <td className="px-2 py-0.5 text-slate-700" colSpan={3}>Extra Items / Services</td>
+                <td className="px-2 py-0.5 text-slate-700" colSpan={4}>Extra Items / Services</td>
                 <td className="px-2 py-0.5 text-right text-slate-600">{r.extra_items || "—"}</td>
               </tr>
               <tr style={{ background: "#eff6ff" }}>
-                <td className="px-2 py-1 font-bold text-[#1e3a5f] text-sm" colSpan={3}>
+                <td className="px-2 py-1 font-bold text-[#1e3a5f] text-sm" colSpan={4}>
                   Final Valuation Say (Rs.)
                 </td>
                 <td className="px-2 py-1 text-right font-bold text-[#1e3a5f] text-sm">
