@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Camera, Locate, X, AlertTriangle, Pencil, LockKeyhole, Clock } from "lucide-react";
+import { CheckCircle, Camera, Locate, MapPin, X, AlertTriangle, Pencil, LockKeyhole, Clock } from "lucide-react";
 
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_SIZE_MB = 5;
@@ -574,11 +574,24 @@ export default function SurveyStageClient({
                 <FormMessage />
               </FormItem>
             )} />
-            <div className="pt-5">
+            <div className="pt-5 flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={handleGetLocation} disabled={locating} className="gap-1.5">
                 <Locate className="h-3.5 w-3.5" />
                 {locating ? "Locating…" : "Get My Location"}
               </Button>
+              {(() => {
+                const lat = F.watch("precise_latitude");
+                const lng = F.watch("precise_longitude");
+                if (!lat || !lng) return null;
+                return (
+                  <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer">
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Open in Maps
+                    </Button>
+                  </a>
+                );
+              })()}
             </div>
           </div>
 
