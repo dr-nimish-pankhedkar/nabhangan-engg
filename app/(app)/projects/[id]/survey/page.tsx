@@ -30,28 +30,9 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
 
   if (!projectRes.data) notFound();
 
-  const isAdmin = profileRes.data?.role === "admin";
-  const projectStageIdx = STAGE_ORDER.indexOf(projectRes.data.status);
-
-  if (!isAdmin && projectStageIdx < THIS_STAGE_IDX) {
-    const { data: assignment } = await supabase
-      .from("project_assignments")
-      .select("profiles(full_name)")
-      .eq("project_id", id)
-      .eq("stage", projectRes.data.status)
-      .maybeSingle();
-    const assignedTo = (assignment as any)?.profiles?.full_name ?? null;
-    return (
-      <div className="max-w-2xl">
-        <RealtimeProjectRefresh projectId={id} />
-        <h1 className="text-xl font-semibold text-slate-800 mb-6">Site Visit Report</h1>
-        <StagePendingCard activeStage={projectRes.data.status} assignedTo={assignedTo} />
-      </div>
-    );
-  }
-
   const existingPhotos = photosRes.data || [];
-  const isLocked = !!submissionRes.data && !submissionRes.data.revoked_by;
+  const isSubmitted = !!submissionRes.data && !submissionRes.data.revoked_by;
+  const lastUpdatedAt = svrRes.data?.updated_at ?? null;
 
   return (
     <div className="max-w-2xl">
@@ -63,7 +44,8 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
         project={projectRes.data}
         existingReport={svrRes.data?.data || null}
         existingPhotos={existingPhotos}
-        isLocked={isLocked}
+        isSubmitted={isSubmitted}
+        lastUpdatedAt={lastUpdatedAt}
         customFields={(projectRes.data.bank_metadata as any)?.custom_fields || []}
       />
     </div>

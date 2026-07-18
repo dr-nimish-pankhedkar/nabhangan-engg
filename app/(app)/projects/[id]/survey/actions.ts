@@ -30,13 +30,9 @@ const LogFileSchema = z.object({
   remarks: z.string().max(1000).optional(),
 });
 
-async function requireSurveyAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, projectId: string) {
-  const [{ data: profile }, { data: asgn }] = await Promise.all([
-    supabase.from("profiles").select("role, is_active").eq("id", userId).single(),
-    supabase.from("project_assignments").select("id").eq("project_id", projectId).eq("user_id", userId).eq("stage", "survey").maybeSingle(),
-  ]);
+async function requireSurveyAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, _projectId: string) {
+  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", userId).single();
   if (!profile?.is_active) return "Account is inactive.";
-  if (profile?.role !== "admin" && !asgn) return "You are not assigned to this project's Survey stage.";
   return null;
 }
 

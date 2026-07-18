@@ -181,7 +181,8 @@ export default function SurveyStageClient({
   project,
   existingReport,
   existingPhotos,
-  isLocked,
+  isSubmitted,
+  lastUpdatedAt,
   customFields = [],
 }: {
   projectId: string;
@@ -189,7 +190,8 @@ export default function SurveyStageClient({
   project: any;
   existingReport: Record<string, string> | null;
   existingPhotos: { id: string; file_name: string; file_path: string; uploaded_at: string }[];
-  isLocked: boolean;
+  isSubmitted: boolean;
+  lastUpdatedAt: string | null;
   customFields?: CustomField[];
 }) {
   const router = useRouter();
@@ -418,21 +420,24 @@ export default function SurveyStageClient({
 
   const F = form;
 
-  if (isLocked) {
-    return (
-      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4">
-        <LockKeyhole className="h-5 w-5 text-green-600 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-green-700">Survey Submitted & Locked</p>
-          <p className="text-xs text-green-600/80">This survey has been submitted. Contact your admin to re-open for corrections.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Form {...form}>
       <div className="space-y-4">
+
+        {/* Submitted banner */}
+        {isSubmitted && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <Pencil className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-amber-700">Survey already submitted — editing is allowed</p>
+              <p className="text-xs text-amber-600/80">
+                Changes you save here will update the report data.
+                {lastUpdatedAt && ` Last saved: ${new Date(lastUpdatedAt).toLocaleString("en-IN")}.`}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── Pre-filled Lead Data ── */}
         <Card className="border-slate-200">
@@ -1034,22 +1039,35 @@ export default function SurveyStageClient({
         )}
 
         <div className="flex gap-3 flex-wrap">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={form.handleSubmit(handleSaveDraft)}
-            disabled={form.formState.isSubmitting}
-          >
-            Save Draft
-          </Button>
-          <Button
-            type="button"
-            className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
-            onClick={form.handleSubmit(handleSubmit)}
-            disabled={form.formState.isSubmitting}
-          >
-            Submit Report → Drafting
-          </Button>
+          {isSubmitted ? (
+            <Button
+              type="button"
+              className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+              onClick={form.handleSubmit(handleSaveDraft)}
+              disabled={form.formState.isSubmitting}
+            >
+              Save Update
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={form.handleSubmit(handleSaveDraft)}
+                disabled={form.formState.isSubmitting}
+              >
+                Save Draft
+              </Button>
+              <Button
+                type="button"
+                className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white"
+                onClick={form.handleSubmit(handleSubmit)}
+                disabled={form.formState.isSubmitting}
+              >
+                Submit Report → Drafting
+              </Button>
+            </>
+          )}
         </div>
 
       </div>
