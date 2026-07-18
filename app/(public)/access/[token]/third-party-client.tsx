@@ -148,10 +148,10 @@ function ReadOnlyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function calcVal(area: string, rate: string, lf: string): string {
-  const a = parseFloat(area) || 0;
-  const r = parseFloat(rate) || 0;
-  const l = parseFloat(lf) || 1;
+function calcVal(area: string | undefined, rate: string | undefined, lf: string | undefined): string {
+  const a = parseFloat(area || "") || 0;
+  const r = parseFloat(rate || "") || 0;
+  const l = parseFloat(lf || "") || 1;
   return a && r ? String(Math.round(a * r * l)) : "";
 }
 
