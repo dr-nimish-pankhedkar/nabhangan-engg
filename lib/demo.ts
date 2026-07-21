@@ -4,7 +4,7 @@
  * All rights reserved.
  */
 
-export const DEMO_EXPIRY = new Date("2026-07-20T23:59:59+05:30");
+export const DEMO_EXPIRY = new Date("2026-07-31T23:59:59+05:30");
 export const DEMO_MAX_USERS = 4;
 
 export function demoStatus(): { expired: boolean; daysLeft: number } {
