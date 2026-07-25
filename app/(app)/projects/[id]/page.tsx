@@ -156,9 +156,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
               <p className="text-sm text-slate-500">{project.project_address}</p>
-              {isAdmin && (
-                <p className="text-xs text-slate-400 mt-1">Created by: {(project as any).profiles?.full_name}</p>
-              )}
+              <p className="text-xs text-slate-400 mt-1">Created by: {(project as any).profiles?.full_name}</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               <Link href={`/projects/${id}/valuation-report`} target="_blank" rel="noopener noreferrer">
@@ -166,38 +164,21 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <Download className="h-3.5 w-3.5" /> Site Survey Report
                 </Button>
               </Link>
-              {isAdmin && (
-                <>
-                  <Link href={`/projects/${id}/edit`}>
-                    <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
-                      <Pencil className="h-3.5 w-3.5" /> Edit Case
-                    </Button>
-                  </Link>
-                  <DeleteCaseButton projectId={id} projectName={project.bank_name} />
-                </>
-              )}
+              <Link href={`/projects/${id}/edit`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0">
+                  <Pencil className="h-3.5 w-3.5" /> Edit Case
+                </Button>
+              </Link>
+              {isAdmin && <DeleteCaseButton projectId={id} projectName={project.bank_name} />}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Documents Pending toggle — admin only */}
-      {isAdmin && (
-        <div className="mb-4">
-          <DocumentsPendingToggle projectId={id} initialValue={!!project.documents_pending} />
-        </div>
-      )}
-
-      {/* Documents pending warning for non-admin */}
-      {!isAdmin && project.documents_pending && (
-        <div className="flex items-center gap-3 mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-amber-800">Documents Pending</p>
-            <p className="text-xs text-amber-600">Required documents have not yet been submitted for this case.</p>
-          </div>
-        </div>
-      )}
+      {/* Documents Pending toggle */}
+      <div className="mb-4">
+        <DocumentsPendingToggle projectId={id} initialValue={!!project.documents_pending} />
+      </div>
 
       {/* Needs admin review banner */}
       {isAdmin && project.requires_review && (
@@ -205,12 +186,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       )}
 
       {/* Lead → Survey kickoff */}
-      {project.status === "lead" && isAdmin && !project.requires_review && (
+      {project.status === "lead" && !project.requires_review && (
         <StartSurveyButton projectId={id} />
       )}
 
       {/* Stuck-stage recovery */}
-      {currentStageDone && nextStage && isAdmin && (
+      {currentStageDone && nextStage && (
         <AdvanceStageButton
           projectId={id}
           nextStatus={nextStage}
@@ -336,7 +317,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     )}
                     {!hasContent && <span className="text-xs text-slate-400 font-normal">· No activity yet</span>}
                   </CardTitle>
-                  {isAdmin && submissionsMap[stage.value] && (
+                  {submissionsMap[stage.value] && (
                     <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                       {!submissionsMap[stage.value].revoked_by ? (
                         <>
