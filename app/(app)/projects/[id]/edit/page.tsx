@@ -6,7 +6,7 @@
 
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { ChevronRight } from "lucide-react";
 import EditProjectForm from "./edit-project-form";
 
@@ -17,11 +17,10 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
 
   const { id } = await params;
 
-  const admin = await createAdminClient();
   const [projectRes, staffRes, assignmentsRes] = await Promise.all([
-    admin.from("projects").select("*").eq("id", id).single(),
-    admin.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
-    admin.from("project_assignments").select("user_id, stage").eq("project_id", id),
+    supabase.from("projects").select("*").eq("id", id).single(),
+    supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
+    supabase.from("project_assignments").select("user_id, stage").eq("project_id", id),
   ]);
 
   if (!projectRes.data) notFound();
