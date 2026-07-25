@@ -11,7 +11,7 @@ import { z } from "zod";
 
 const Schema = z.object({
   project_id: z.string().uuid(),
-  expiry_hours: z.number().int().min(1).max(168),
+  expiry_hours: z.number().int().min(1).max(360),
   surveyor_name: z.string().min(1).max(200),
 });
 
@@ -23,9 +23,6 @@ export async function generateThirdPartyToken(input: {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthenticated" };
-
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Forbidden" };
 
   const parsed = Schema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };

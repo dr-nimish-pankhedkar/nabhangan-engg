@@ -21,6 +21,8 @@ const EXPIRY_OPTIONS = [
   { label: "24 hours (1 day)", value: 24 },
   { label: "48 hours (2 days)", value: 48 },
   { label: "72 hours (3 days)", value: 72 },
+  { label: "7 days", value: 168 },
+  { label: "15 days", value: 360 },
 ];
 
 export default function GenerateLinkForm({
@@ -47,8 +49,8 @@ export default function GenerateLinkForm({
     if (!surveyorName.trim()) { setError("Enter the surveyor's name."); return; }
 
     const hours = useCustom ? parseInt(customHours, 10) : expiryHours;
-    if (!hours || hours < 1 || hours > 168) {
-      setError("Expiry must be between 1 and 168 hours.");
+    if (!hours || hours < 1 || hours > 360) {
+      setError("Expiry must be between 1 and 360 hours.");
       return;
     }
 
@@ -151,8 +153,8 @@ export default function GenerateLinkForm({
               <Input
                 type="number"
                 min="1"
-                max="168"
-                placeholder="Hours (1–168)"
+                max="360"
+                placeholder="Hours (1–360)"
                 value={customHours}
                 onChange={(e) => setCustomHours(e.target.value)}
                 className="text-sm"

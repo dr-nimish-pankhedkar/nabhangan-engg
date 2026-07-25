@@ -31,6 +31,8 @@ const EXPIRY_OPTS = [
   { label: "24 hours", value: 24 },
   { label: "48 hours", value: 48 },
   { label: "72 hours", value: 72 },
+  { label: "7 days", value: 168 },
+  { label: "15 days", value: 360 },
 ];
 
 interface StaffMember {
