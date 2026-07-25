@@ -6,7 +6,7 @@
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,25 +34,11 @@ export default async function ProjectsPage({
   const activeStage = params.stage as ProjectStatus | undefined;
   const docsFilter = params.docs_pending === "1";
 
-  let query = supabase
+  const admin = await createAdminClient();
+  let query = admin
     .from("projects")
     .select("*, profiles(full_name)")
     .order("created_at", { ascending: false });
-
-  if (!isAdmin) {
-    const { data: assignedIds } = await supabase
-      .from("project_assignments")
-      .select("project_id")
-      .eq("user_id", user.id);
-    const assignedProjectIds = (assignedIds || []).map((a: any) => a.project_id);
-
-    // Show both assigned projects and cases this staff member created (pending review)
-    if (assignedProjectIds.length > 0) {
-      query = query.or(`id.in.(${assignedProjectIds.join(",")}),created_by.eq.${user.id}`);
-    } else {
-      query = query.eq("created_by", user.id);
-    }
-  }
 
   if (activeStage) {
     query = query.eq("status", activeStage);

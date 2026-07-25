@@ -71,18 +71,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!project) notFound();
 
-  // Non-admin can only view projects they created or are assigned to
-  if (!isAdmin) {
-    const { data: assignment } = await supabase
-      .from("project_assignments")
-      .select("id")
-      .eq("project_id", id)
-      .eq("user_id", user.id)
-      .limit(1)
-      .single();
-    if (!assignment && project.created_by !== user.id) notFound();
-  }
-
   const currentStageIdx = STAGE_ORDER.indexOf(project.status);
 
   const [filesRes, responsesRes, timelogsRes, assignmentsRes, submissionsRes] = await Promise.all([
