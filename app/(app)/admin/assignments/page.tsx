@@ -6,7 +6,7 @@
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { STATUS_COLORS, ProjectStatus } from "@/lib/types";
 import { FEATURES } from "@/lib/features";
 import { Badge } from "@/components/ui/badge";
@@ -40,15 +40,19 @@ export default async function AssignmentsPage() {
   const { data: profile } = await supabase.from("profiles").select("role, is_active").eq("id", user.id).single();
   if (!profile?.is_active) redirect("/dashboard");
 
+  // Use admin client (bypasses RLS) when service role key is available — required for all
+  // users to see all projects/staff. Falls back to the user's own session otherwise.
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
+
   const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes, surveySubmissionsRes] = await Promise.all([
-    supabase.from("projects").select("id, bank_name, bank_metadata, project_address, status").neq("status", "dispatch").neq("status", "fees_received").order("created_at", { ascending: false }),
-    supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
-    supabase.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
-    supabase.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
-    supabase.from("third_party_tokens").select("project_id, token, surveyor_name, used_at, expires_at").order("created_at", { ascending: false }),
-    supabase.from("other_assignments").select("id, user_id, task_description, assigned_at, profiles(full_name)").eq("is_active", true).order("assigned_at", { ascending: false }),
+    db.from("projects").select("id, bank_name, bank_metadata, project_address, status").neq("status", "dispatch").neq("status", "fees_received").order("created_at", { ascending: false }),
+    db.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
+    db.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
+    db.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
+    db.from("third_party_tokens").select("project_id, token, surveyor_name, used_at, expires_at").order("created_at", { ascending: false }),
+    db.from("other_assignments").select("id, user_id, task_description, assigned_at, profiles(full_name)").eq("is_active", true).order("assigned_at", { ascending: false }),
     // Projects with a non-revoked survey submission (staff-submitted) — these can't get new TP links
-    supabase.from("stage_submissions").select("project_id").eq("stage", "survey").is("revoked_by", null),
+    db.from("stage_submissions").select("project_id").eq("stage", "survey").is("revoked_by", null),
   ]);
 
   const projects = projectsRes.data || [];

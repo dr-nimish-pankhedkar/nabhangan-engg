@@ -5,7 +5,7 @@
  */
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import NewProjectForm from "./new-project-form";
 
 export default async function NewProjectPage() {
@@ -23,7 +23,8 @@ export default async function NewProjectPage() {
 
   const isAdmin = profile.role === "admin";
 
-  const staff = (await supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name")).data || [];
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
+  const staff = (await db.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name")).data || [];
 
   return (
     <div className="max-w-2xl">

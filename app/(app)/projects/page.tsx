@@ -6,7 +6,7 @@
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { PROJECT_STAGES, ProjectStatus, STATUS_COLORS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,8 @@ export default async function ProjectsPage({
   const activeStage = params.stage as ProjectStatus | undefined;
   const docsFilter = params.docs_pending === "1";
 
-  let query = supabase
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
+  let query = db
     .from("projects")
     .select("*, profiles(full_name)")
     .order("created_at", { ascending: false });

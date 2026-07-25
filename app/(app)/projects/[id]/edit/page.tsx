@@ -6,7 +6,7 @@
 
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ChevronRight } from "lucide-react";
 import EditProjectForm from "./edit-project-form";
 
@@ -17,10 +17,11 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
 
   const { id } = await params;
 
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
   const [projectRes, staffRes, assignmentsRes] = await Promise.all([
-    supabase.from("projects").select("*").eq("id", id).single(),
-    supabase.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
-    supabase.from("project_assignments").select("user_id, stage").eq("project_id", id),
+    db.from("projects").select("*").eq("id", id).single(),
+    db.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
+    db.from("project_assignments").select("user_id, stage").eq("project_id", id),
   ]);
 
   if (!projectRes.data) notFound();
