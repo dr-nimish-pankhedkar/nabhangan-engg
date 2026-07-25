@@ -304,6 +304,7 @@ export default function EditProjectForm({
         print: currentAssignments.print || "",
         scan: currentAssignments.scan || "",
         dispatch: currentAssignments.dispatch || "",
+        fees_received: currentAssignments.fees_received || "",
       },
     },
   });
@@ -383,9 +384,13 @@ export default function EditProjectForm({
 
     const surveyIsThirdParty = data.assignments?.survey === TP_VALUE;
 
-    const assignmentsInput = Object.entries(data.assignments || {})
-      .filter(([, uid]) => uid && uid !== "none" && uid !== TP_VALUE && uid.length > 0)
-      .map(([stage, uid]) => ({ stage, user_id: uid as string }));
+    // Send all managed stages so the action can upsert or clear each one individually.
+    // Stages not in this list (e.g., added via Assignments page) are left untouched.
+    const assignmentsInput = ASSIGNABLE_STAGES.map(({ value: stage }) => {
+      const uid = (data.assignments as Record<string, string> | undefined)?.[stage];
+      const isSet = uid && uid !== "none" && uid !== TP_VALUE && uid.length > 0;
+      return { stage, user_id: isSet ? uid : null };
+    });
 
     const result = await updateProjectInfo(projectId, {
       bank_name: data.bank_name,

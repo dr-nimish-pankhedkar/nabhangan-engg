@@ -23,7 +23,7 @@ const UpdateProjectSchema = z.object({
 
 const AssignmentSchema = z.object({
   stage: z.enum(["lead", "survey", "rate_verification", "drafting", "checking", "print", "scan", "dispatch", "fees_received"]),
-  user_id: z.string().uuid(),
+  user_id: z.string().uuid().nullable(),
 });
 
 async function requireActiveUser() {
@@ -73,7 +73,7 @@ export async function updateProjectInfo(
     latitude: number | null;
     longitude: number | null;
     bank_metadata: Record<string, unknown>;
-    assignments?: { stage: string; user_id: string }[];
+    assignments?: { stage: string; user_id: string | null }[];
   }
 ): Promise<{ error?: string }> {
   const { admin, error } = await requireActiveUser();
@@ -97,12 +97,17 @@ export async function updateProjectInfo(
       .filter((r) => r.success)
       .map((r) => r.data!);
     if (validAssignments.length > 0) {
-      await admin.from("project_assignments").delete().eq("project_id", projectId);
-      await admin.from("project_assignments").insert(
-        validAssignments.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
-      );
-      // Auto-advance lead → survey when a survey assignee is set
-      if (validAssignments.some((a) => a.stage === "survey")) {
+      const stages = validAssignments.map((a) => a.stage);
+      // Delete only the stages being explicitly managed — other stages are untouched
+      await admin.from("project_assignments").delete().eq("project_id", projectId).in("stage", stages);
+      const toInsert = validAssignments.filter((a) => a.user_id !== null);
+      if (toInsert.length > 0) {
+        await admin.from("project_assignments").insert(
+          toInsert.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
+        );
+      }
+      // Auto-advance lead → survey when a survey assignee is being set
+      if (validAssignments.some((a) => a.stage === "survey" && a.user_id !== null)) {
         const { data: proj } = await admin.from("projects").select("status").eq("id", projectId).single();
         if (proj?.status === "lead") {
           await admin.from("projects").update({ status: "survey" }).eq("id", projectId);
