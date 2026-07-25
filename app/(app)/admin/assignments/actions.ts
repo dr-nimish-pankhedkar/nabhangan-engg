@@ -6,7 +6,7 @@
 
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ProjectStatus } from "@/lib/types";
 import { z } from "zod";
 
@@ -37,14 +37,15 @@ export async function createAssignment(input: {
   const parsed = CreateAssignmentSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
 
-  const { error } = await supabase.from("project_assignments").insert(parsed.data);
+  const admin = await createAdminClient();
+  const { error } = await admin.from("project_assignments").insert(parsed.data);
   if (error) return { error: error.message };
 
   // Auto-advance lead → survey when survey staff is assigned
   if (parsed.data.stage === "survey") {
-    const { data: proj } = await supabase.from("projects").select("status").eq("id", parsed.data.project_id).single();
+    const { data: proj } = await admin.from("projects").select("status").eq("id", parsed.data.project_id).single();
     if (proj?.status === "lead") {
-      await supabase.from("projects").update({ status: "survey" }).eq("id", parsed.data.project_id);
+      await admin.from("projects").update({ status: "survey" }).eq("id", parsed.data.project_id);
     }
   }
 
@@ -80,7 +81,8 @@ export async function removeAssignment(assignmentId: string): Promise<{ error?: 
   const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).single();
   if (!profile?.is_active) return { error: "Account is inactive." };
   if (!UUIDSchema.safeParse(assignmentId).success) return { error: "Invalid ID" };
-  const { error } = await supabase.from("project_assignments").delete().eq("id", assignmentId);
+  const admin = await createAdminClient();
+  const { error } = await admin.from("project_assignments").delete().eq("id", assignmentId);
   if (error) return { error: error.message };
   return {};
 }

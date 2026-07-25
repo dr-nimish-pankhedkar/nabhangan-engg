@@ -7,7 +7,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const AddSchema = z.object({
@@ -18,23 +18,24 @@ const AddSchema = z.object({
 async function requireActiveUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { supabase, user: null, error: "Unauthenticated" };
+  if (!user) return { admin: null, user: null, error: "Unauthenticated" };
   const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).single();
-  if (!profile?.is_active) return { supabase, user, error: "Account is inactive." };
-  return { supabase, user, error: null };
+  if (!profile?.is_active) return { admin: null, user, error: "Account is inactive." };
+  const admin = await createAdminClient();
+  return { admin, user, error: null };
 }
 
 export async function addOtherAssignment(input: {
   user_id: string;
   task_description: string;
 }): Promise<{ error?: string }> {
-  const { supabase, user, error } = await requireActiveUser();
-  if (error || !user) return { error: error ?? "Unauthenticated" };
+  const { admin, user, error } = await requireActiveUser();
+  if (error || !user || !admin) return { error: error ?? "Unauthenticated" };
 
   const parsed = AddSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
 
-  const { error: dbError } = await supabase
+  const { error: dbError } = await admin
     .from("other_assignments")
     .insert({
       user_id: parsed.data.user_id,
@@ -48,12 +49,12 @@ export async function addOtherAssignment(input: {
 }
 
 export async function removeOtherAssignment(id: string): Promise<{ error?: string }> {
-  const { supabase, error } = await requireActiveUser();
-  if (error) return { error };
+  const { admin, error } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
 
   if (!z.string().uuid().safeParse(id).success) return { error: "Invalid ID" };
 
-  const { error: dbError } = await supabase.from("other_assignments").delete().eq("id", id);
+  const { error: dbError } = await admin.from("other_assignments").delete().eq("id", id);
   if (dbError) return { error: dbError.message };
   revalidatePath("/admin/assignments");
   return {};
