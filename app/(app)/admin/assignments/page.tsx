@@ -45,7 +45,7 @@ export default async function AssignmentsPage() {
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
 
   const [projectsRes, staffRes, assignmentsRes, requestsRes, tpTokensRes, otherRes, surveySubmissionsRes] = await Promise.all([
-    db.from("projects").select("id, bank_name, bank_metadata, project_address, status").neq("status", "dispatch").neq("status", "fees_received").order("created_at", { ascending: false }),
+    db.from("projects").select("id, bank_name, bank_metadata, project_address, status").order("created_at", { ascending: false }),
     db.from("profiles").select("id, full_name, role, designation").eq("is_active", true).order("full_name"),
     db.from("project_assignments").select("id, project_id, user_id, stage").order("assigned_at", { ascending: false }),
     db.from("task_requests").select("*, profiles(full_name), projects(bank_name)").eq("status", "pending").order("created_at", { ascending: false }),
@@ -55,7 +55,9 @@ export default async function AssignmentsPage() {
     db.from("stage_submissions").select("project_id").eq("stage", "survey").is("revoked_by", null),
   ]);
 
-  const projects = projectsRes.data || [];
+  const allProjects = projectsRes.data || [];
+  // Matrix shows active cases only; dropdown shows all so staff can be assigned to any case
+  const projects = allProjects.filter((p: any) => p.status !== "dispatch" && p.status !== "fees_received");
   const staff = staffRes.data || [];
   const assignments = assignmentsRes.data || [];
   const pendingRequests = requestsRes.data || [];
@@ -95,7 +97,7 @@ export default async function AssignmentsPage() {
       {/* Assign form — constrained width */}
       <div className="max-w-xl mb-8">
         <h2 className="text-sm font-semibold text-slate-600 mb-3">Assign Staff</h2>
-        <AssignmentForm projects={projects} staff={staff} />
+        <AssignmentForm projects={allProjects} staff={staff} />
       </div>
 
       {/* Matrix table */}
