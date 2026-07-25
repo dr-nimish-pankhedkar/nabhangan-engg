@@ -427,6 +427,8 @@ export default function EditProjectForm({
   }
 
   const F = form;
+  const watchedLat = F.watch("latitude");
+  const watchedLng = F.watch("longitude");
 
   return (
     <Card className="border-slate-200">
@@ -544,6 +546,17 @@ export default function EditProjectForm({
                   <FormItem><FormLabel>Longitude</FormLabel><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </Row>
+              {watchedLat && watchedLng && (
+                <a
+                  href={`https://www.google.com/maps?q=${watchedLat},${watchedLng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <MapPin className="h-3 w-3" />
+                  Open in Google Maps
+                </a>
+              )}
             </Section>
 
             {/* Additional Information (collapsible) */}

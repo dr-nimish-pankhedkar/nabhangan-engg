@@ -157,6 +157,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <div className="min-w-0">
               <p className="text-sm text-slate-500">{project.project_address}</p>
               <p className="text-xs text-slate-400 mt-1">Created by: {(project as any).profiles?.full_name}</p>
+              {project.latitude != null && project.longitude != null && (
+                <a
+                  href={`https://www.google.com/maps?q=${project.latitude},${project.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline mt-1"
+                >
+                  <MapPinned className="h-3 w-3" />
+                  Open in Google Maps
+                </a>
+              )}
             </div>
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               <Link href={`/projects/${id}/valuation-report`} target="_blank" rel="noopener noreferrer">
