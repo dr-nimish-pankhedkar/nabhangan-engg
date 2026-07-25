@@ -26,40 +26,41 @@ const AssignmentSchema = z.object({
   user_id: z.string().uuid(),
 });
 
-async function requireAdmin() {
+async function requireActiveUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { supabase, user: null, error: "Unauthenticated" as const };
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { supabase, user, error: "Forbidden" as const };
-  return { supabase, user, error: null };
+  if (!user) return { admin: null, user: null, error: "Unauthenticated" as const, isAdmin: false };
+  const { data: profile } = await supabase.from("profiles").select("role, is_active").eq("id", user.id).single();
+  if (!profile?.is_active) return { admin: null, user, error: "Account is inactive." as const, isAdmin: false };
+  const admin = await createAdminClient();
+  return { admin, user, error: null, isAdmin: profile?.role === "admin" };
 }
 
 export async function startSurvey(projectId: string): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
-  const { error: dbError } = await supabase.from("projects").update({ status: "survey" }).eq("id", projectId);
+  const { error: dbError } = await admin.from("projects").update({ status: "survey" }).eq("id", projectId);
   if (dbError) return { error: dbError.message };
   return {};
 }
 
 export async function advanceProjectStage(projectId: string, nextStatus: ProjectStatus): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   if (!StatusSchema.safeParse(nextStatus).success) return { error: "Invalid status" };
-  const { error: dbError } = await supabase.from("projects").update({ status: nextStatus }).eq("id", projectId);
+  const { error: dbError } = await admin.from("projects").update({ status: nextStatus }).eq("id", projectId);
   if (dbError) return { error: dbError.message };
   return {};
 }
 
 export async function toggleDocumentsPending(projectId: string, pending: boolean): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   if (typeof pending !== "boolean") return { error: "Invalid value" };
-  const { error: dbError } = await supabase.from("projects").update({ documents_pending: pending }).eq("id", projectId);
+  const { error: dbError } = await admin.from("projects").update({ documents_pending: pending }).eq("id", projectId);
   if (dbError) return { error: dbError.message };
   return {};
 }
@@ -75,13 +76,13 @@ export async function updateProjectInfo(
     assignments?: { stage: string; user_id: string }[];
   }
 ): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   const parsed = UpdateProjectSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
 
-  const { error: dbError } = await supabase.from("projects").update({
+  const { error: dbError } = await admin.from("projects").update({
     bank_name: parsed.data.bank_name,
     project_address: parsed.data.project_address,
     latitude: parsed.data.latitude,
@@ -96,15 +97,15 @@ export async function updateProjectInfo(
       .filter((r) => r.success)
       .map((r) => r.data!);
     if (validAssignments.length > 0) {
-      await supabase.from("project_assignments").delete().eq("project_id", projectId);
-      await supabase.from("project_assignments").insert(
+      await admin.from("project_assignments").delete().eq("project_id", projectId);
+      await admin.from("project_assignments").insert(
         validAssignments.map((a) => ({ project_id: projectId, user_id: a.user_id, stage: a.stage }))
       );
       // Auto-advance lead → survey when a survey assignee is set
       if (validAssignments.some((a) => a.stage === "survey")) {
-        const { data: proj } = await supabase.from("projects").select("status").eq("id", projectId).single();
+        const { data: proj } = await admin.from("projects").select("status").eq("id", projectId).single();
         if (proj?.status === "lead") {
-          await supabase.from("projects").update({ status: "survey" }).eq("id", projectId);
+          await admin.from("projects").update({ status: "survey" }).eq("id", projectId);
         }
       }
     }
@@ -114,65 +115,63 @@ export async function updateProjectInfo(
 }
 
 export async function approveCase(projectId: string): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error, isAdmin } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
+  if (!isAdmin) return { error: "Forbidden" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
-  const { error: dbError } = await supabase.from("projects").update({ requires_review: false }).eq("id", projectId);
+  const { error: dbError } = await admin.from("projects").update({ requires_review: false }).eq("id", projectId);
   if (dbError) return { error: dbError.message };
   return {};
 }
 
 export async function deleteProject(projectId: string): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error, isAdmin } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
+  if (!isAdmin) return { error: "Forbidden" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
-  const { data: files } = await supabase.from("project_files").select("file_path").eq("project_id", projectId);
+  const { data: files } = await admin.from("project_files").select("file_path").eq("project_id", projectId);
   if (files && files.length > 0) {
-    await supabase.storage.from("project-files").remove(files.map((f: any) => f.file_path));
+    await admin.storage.from("project-files").remove(files.map((f: any) => f.file_path));
   }
-  const { error: dbError } = await supabase.from("projects").delete().eq("id", projectId);
+  const { error: dbError } = await admin.from("projects").delete().eq("id", projectId);
   if (dbError) return { error: dbError.message };
   return {};
 }
 
 export async function deleteProjectFiles(fileIds: string[]): Promise<{ error?: string }> {
-  const { supabase, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, error } = await requireActiveUser();
+  if (error || !admin) return { error: error ?? "Unauthenticated" };
   if (!Array.isArray(fileIds) || fileIds.length === 0) return {};
   const validIds = fileIds.filter((id) => ProjectIdSchema.safeParse(id).success);
   if (validIds.length === 0) return {};
-  const { data: files } = await supabase.from("project_files").select("id, file_path").in("id", validIds);
+  const { data: files } = await admin.from("project_files").select("id, file_path").in("id", validIds);
   if (files && files.length > 0) {
-    await supabase.storage.from("project-files").remove(files.map((f: any) => f.file_path));
+    await admin.storage.from("project-files").remove(files.map((f: any) => f.file_path));
   }
-  const { error: dbError } = await supabase.from("project_files").delete().in("id", validIds);
+  const { error: dbError } = await admin.from("project_files").delete().in("id", validIds);
   if (dbError) return { error: dbError.message };
   return {};
 }
 
 export async function revokeStageSubmission(projectId: string, stage: string): Promise<{ error?: string }> {
-  const { supabase, user, error } = await requireAdmin();
-  if (error) return { error };
+  const { admin, user, error } = await requireActiveUser();
+  if (error || !admin || !user) return { error: error ?? "Unauthenticated" };
   if (!ProjectIdSchema.safeParse(projectId).success) return { error: "Invalid project ID" };
   if (!StatusSchema.safeParse(stage).success) return { error: "Invalid stage" };
 
-  // Revoke the stage submission record (if one exists)
-  const { error: dbError } = await supabase
+  const { error: dbError } = await admin
     .from("stage_submissions")
-    .update({ revoked_by: user!.id, revoked_at: new Date().toISOString() })
+    .update({ revoked_by: user.id, revoked_at: new Date().toISOString() })
     .eq("project_id", projectId)
     .eq("stage", stage);
   if (dbError) return { error: dbError.message };
 
-  // Revert project status back to this stage so it can be re-done
-  const { error: statusError } = await supabase
+  const { error: statusError } = await admin
     .from("projects")
     .update({ status: stage })
     .eq("id", projectId);
   if (statusError) return { error: statusError.message };
 
-  // Reset used_at on any third-party tokens for this project+stage so new links can be generated
-  const admin = await createAdminClient();
   await admin
     .from("third_party_tokens")
     .update({ used_at: null })
