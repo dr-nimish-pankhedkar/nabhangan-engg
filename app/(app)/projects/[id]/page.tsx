@@ -78,7 +78,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     admin.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
     admin.from("time_logs").select("*, profiles(full_name)").eq("project_id", id).order("logged_at", { ascending: false }),
     admin.from("project_assignments").select("*, profiles(full_name, role)").eq("project_id", id),
-    admin.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by").eq("project_id", id),
+    admin.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by, submitter:profiles!submitted_by(full_name)").eq("project_id", id),
   ]);
 
   const rawFiles = filesRes.data || [];
@@ -323,9 +323,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                           </Badge>
                         )}
                       </span>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-normal">No one assigned yet</span>
-                    )}
+                    ) : (() => {
+                      const sub = submissionsMap[stage.value];
+                      const submitterName = sub && !sub.revoked_by ? (sub as any).submitter?.full_name : null;
+                      return submitterName ? (
+                        <span className="text-xs text-slate-500 font-normal flex items-center gap-1">
+                          Submitted by:
+                          <Badge variant="outline" className="text-xs font-normal text-[#1e3a5f] border-[#1e3a5f]/30">
+                            {submitterName}
+                          </Badge>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-normal">No one assigned yet</span>
+                      );
+                    })()}
                     {!hasContent && <span className="text-xs text-slate-400 font-normal">· No activity yet</span>}
                   </CardTitle>
                   {submissionsMap[stage.value] && (
@@ -442,6 +453,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     if (surveyThirdPartyName && !assignedPerStage["survey"]) {
                       assignedPerStage["survey"] = `Third Party — ${surveyThirdPartyName}`;
                     }
+                    // Fallback: when no formal assignment, show who submitted the stage
+                    PROJECT_STAGES.forEach(({ value: stg }) => {
+                      if (!assignedPerStage[stg]) {
+                        const sub = submissionsMap[stg];
+                        if (sub && !sub.revoked_by && (sub as any).submitter?.full_name) {
+                          assignedPerStage[stg] = (sub as any).submitter.full_name;
+                        }
+                      }
+                    });
                     const totalHours = Object.values(hoursPerStage).reduce((a, b) => a + b, 0);
 
                     return (
