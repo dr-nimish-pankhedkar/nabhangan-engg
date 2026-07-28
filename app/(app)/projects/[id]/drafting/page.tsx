@@ -5,7 +5,7 @@
  */
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import DraftingClient from "./drafting-client";
 import StagePendingCard from "../stage-pending-card";
 import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
@@ -20,12 +20,13 @@ export default async function DraftingPage({ params }: { params: Promise<{ id: s
   if (!user) redirect("/login");
 
   const { id } = await params;
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
 
   const [surveyPhotosRes, siteVisitReportRes, submissionRes, projectRes, profileRes] = await Promise.all([
-    supabase.from("project_files").select("id, file_name, file_path, file_type, uploaded_at, profiles(full_name)").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
+    db.from("project_files").select("id, file_name, file_path, file_type, uploaded_at, profiles(full_name)").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
     supabase.from("site_visit_reports").select("data").eq("project_id", id).maybeSingle(),
     supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "drafting").maybeSingle(),
-    supabase.from("projects").select("status").eq("id", id).single(),
+    db.from("projects").select("status").eq("id", id).single(),
     supabase.from("profiles").select("role").eq("id", user.id).single(),
   ]);
 
@@ -33,7 +34,7 @@ export default async function DraftingPage({ params }: { params: Promise<{ id: s
   const projectStageIdx = STAGE_ORDER.indexOf(projectRes.data?.status ?? "lead");
 
   if (!isAdmin && projectStageIdx < THIS_STAGE_IDX) {
-    const { data: assignment } = await supabase
+    const { data: assignment } = await db
       .from("project_assignments")
       .select("profiles(full_name)")
       .eq("project_id", id)

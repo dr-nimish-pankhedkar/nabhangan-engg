@@ -5,7 +5,7 @@
  */
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import FeesReceivedClient from "./fees-received-client";
 import StagePendingCard from "../stage-pending-card";
 import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
@@ -18,10 +18,11 @@ export default async function FeesReceivedPage({ params }: { params: Promise<{ i
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { id } = await params;
+  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? await createAdminClient() : supabase;
 
   const [submissionRes, projectRes, profileRes] = await Promise.all([
     supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "fees_received").maybeSingle(),
-    supabase.from("projects").select("status").eq("id", id).single(),
+    db.from("projects").select("status").eq("id", id).single(),
     supabase.from("profiles").select("role").eq("id", user.id).single(),
   ]);
 
@@ -29,7 +30,7 @@ export default async function FeesReceivedPage({ params }: { params: Promise<{ i
   const projectStageIdx = STAGE_ORDER.indexOf(projectRes.data?.status ?? "lead");
 
   if (!isAdmin && projectStageIdx < THIS_STAGE_IDX) {
-    const { data: assignment } = await supabase
+    const { data: assignment } = await db
       .from("project_assignments")
       .select("profiles(full_name)")
       .eq("project_id", id)
