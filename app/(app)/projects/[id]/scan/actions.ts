@@ -49,7 +49,8 @@ export async function logFileRecord(input: {
   if (!parsed.success) return { error: "Invalid input" };
   const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("project_files").insert({
+  const admin = await createAdminClient();
+  const { error } = await admin.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
     stage: parsed.data.stage,

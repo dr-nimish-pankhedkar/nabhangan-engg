@@ -132,7 +132,8 @@ export async function logFileRecord(input: {
   if (!parsed.success) return { error: "Invalid input" };
   const accessError = await requireSurveyAccess(supabase, user.id, parsed.data.projectId);
   if (accessError) return { error: accessError };
-  const { data, error } = await supabase.from("project_files").insert({
+  const admin = await createAdminClient();
+  const { data, error } = await admin.from("project_files").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
     stage: parsed.data.stage,
