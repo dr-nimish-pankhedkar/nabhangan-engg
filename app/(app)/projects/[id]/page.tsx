@@ -104,10 +104,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const isDispatchSubmitted = !!submissionsMap["dispatch"] && !submissionsMap["dispatch"].revoked_by;
   const isFeesSubmitted = !!submissionsMap["fees_received"] && !submissionsMap["fees_received"].revoked_by;
-  const isComplete = (project.status === "dispatch" && isDispatchSubmitted) || (project.status === "fees_received" && isFeesSubmitted);
+  // Case is complete if dispatch or fees_received is locked, regardless of project.status
+  const isComplete = isDispatchSubmitted || isFeesSubmitted;
+  // Effective progress = highest stage that is locked (submitted & not revoked), or project.status if higher
+  const highestLockedIdx = STAGE_ORDER.reduce((max, stage, idx) => {
+    const sub = submissionsMap[stage];
+    return (sub && !sub.revoked_by) ? Math.max(max, idx) : max;
+  }, -1);
+  const effectiveStageIdx = Math.max(currentStageIdx, highestLockedIdx);
   const progressPct = isComplete
     ? 100
-    : Math.round((currentStageIdx / STAGE_ORDER.length) * 100);
+    : Math.round((effectiveStageIdx / STAGE_ORDER.length) * 100);
 
   // Third-party survey token — fetch for all users so activity history is consistent
   let surveyThirdPartyName: string | null = null;
@@ -244,8 +251,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {/* Stepper */}
       <div className="flex items-center mb-8">
         {PROJECT_STAGES.map((stage, idx) => {
-          const done = idx < currentStageIdx;
-          const active = idx === currentStageIdx;
+          const stageSub = submissionsMap[stage.value];
+          const isLocked = !!stageSub && !stageSub.revoked_by;
+          const done = idx < currentStageIdx || isLocked;
+          const active = !done && idx === currentStageIdx;
           const route = STAGE_ROUTES[stage.value];
           const href = route ? `/projects/${id}/${route}` : null;
           const StageIcon = STAGE_ICONS[stage.value];
@@ -285,7 +294,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 </span>
               </div>
               {idx < PROJECT_STAGES.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-1 ${idx < currentStageIdx ? "bg-[#1e3a5f]" : "bg-slate-200"}`} />
+                <div className={`flex-1 h-0.5 mx-1 ${idx < effectiveStageIdx ? "bg-[#1e3a5f]" : "bg-slate-200"}`} />
               )}
             </div>
           );
