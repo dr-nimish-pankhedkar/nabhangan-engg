@@ -5,7 +5,7 @@
  */
 
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import SurveyStageClient from "./survey-client";
 import StagePendingCard from "../stage-pending-card";
 import RealtimeProjectRefresh from "@/components/realtime-project-refresh";
@@ -20,17 +20,24 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
 
   const { id } = await params;
 
+  const admin = await createAdminClient();
+
   const [projectRes, svrRes, photosRes, submissionRes, profileRes] = await Promise.all([
-    supabase.from("projects").select("*, profiles(full_name)").eq("id", id).single(),
-    supabase.from("site_visit_reports").select("*").eq("project_id", id).maybeSingle(),
-    supabase.from("project_files").select("id, file_name, file_path, uploaded_at").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
+    admin.from("projects").select("*, profiles(full_name)").eq("id", id).single(),
+    admin.from("site_visit_reports").select("*").eq("project_id", id).maybeSingle(),
+    admin.from("project_files").select("id, file_name, file_path, uploaded_at").eq("project_id", id).eq("stage", "survey").like("file_type", "image/%").order("uploaded_at"),
     supabase.from("stage_submissions").select("id, revoked_by").eq("project_id", id).eq("stage", "survey").maybeSingle(),
     supabase.from("profiles").select("role").eq("id", user.id).single(),
   ]);
 
   if (!projectRes.data) notFound();
 
-  const existingPhotos = photosRes.data || [];
+  const rawPhotos = photosRes.data || [];
+  const { data: signedUrlsData } = rawPhotos.length > 0
+    ? await admin.storage.from("project-files").createSignedUrls(rawPhotos.map((p: any) => p.file_path), 3600)
+    : { data: [] };
+  const urlMap = Object.fromEntries((signedUrlsData || []).map((r: any) => [r.path, r.signedUrl]));
+  const existingPhotos = rawPhotos.map((p: any) => ({ ...p, signedUrl: urlMap[p.file_path] || null }));
   const isSubmitted = !!submissionRes.data && !submissionRes.data.revoked_by;
   const lastUpdatedAt = svrRes.data?.updated_at ?? null;
 

@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Camera, Locate, MapPin, X, AlertTriangle, Pencil, LockKeyhole, Clock } from "lucide-react";
+import { CheckCircle, Camera, Locate, MapPin, X, AlertTriangle, Pencil, LockKeyhole, Clock, ExternalLink } from "lucide-react";
 
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_SIZE_MB = 5;
@@ -189,7 +189,7 @@ export default function SurveyStageClient({
   userId: string;
   project: any;
   existingReport: Record<string, string> | null;
-  existingPhotos: { id: string; file_name: string; file_path: string; uploaded_at: string }[];
+  existingPhotos: { id: string; file_name: string; file_path: string; uploaded_at: string; signedUrl?: string | null }[];
   isSubmitted: boolean;
   lastUpdatedAt: string | null;
   customFields?: CustomField[];
@@ -503,8 +503,24 @@ export default function SurveyStageClient({
                   <ReadOnlyRow label="Plot No." value={str(m.plot_no)} />
                   <ReadOnlyRow label="Survey No." value={str(m.survey_no)} />
                   <div className="sm:col-span-2"><ReadOnlyRow label="Address" value={str(project.project_address)} /></div>
-                  <ReadOnlyRow label="Landmark 1" value={str(m.landmark_1)} />
-                  <ReadOnlyRow label="Landmark 2" value={str(m.landmark_2)} />
+                  {/* Landmark 1 */}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-slate-400">Landmark 1</span>
+                    {str(m.landmark_1) ? (
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(str(m.landmark_1))}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                        {str(m.landmark_1)} <ExternalLink className="h-3 w-3 shrink-0" />
+                      </a>
+                    ) : <span className="text-slate-300 font-normal">—</span>}
+                  </div>
+                  {/* Landmark 2 */}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-slate-400">Landmark 2</span>
+                    {str(m.landmark_2) ? (
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(str(m.landmark_2))}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                        {str(m.landmark_2)} <ExternalLink className="h-3 w-3 shrink-0" />
+                      </a>
+                    ) : <span className="text-slate-300 font-normal">—</span>}
+                  </div>
                   <ReadOnlyRow label="Loan Required" value={str(m.loan_required)} />
                   <ReadOnlyRow label="Tentative GPS" value={project.latitude && project.longitude ? `${project.latitude}, ${project.longitude}` : "—"} />
                 </div>
@@ -908,6 +924,13 @@ export default function SurveyStageClient({
                     <div key={p.id} className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2">
                       <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
                       <span className="truncate flex-1">{p.file_name}</span>
+                      {p.signedUrl && (
+                        <a href={p.signedUrl} target="_blank" rel="noopener noreferrer"
+                          className="shrink-0 p-0.5 rounded text-blue-500 hover:text-blue-700 transition-colors"
+                          title="View photo">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleDeletePhoto(p.id, true)}
