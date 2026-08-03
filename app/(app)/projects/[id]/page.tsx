@@ -78,7 +78,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     admin.from("checklist_responses").select("*, profiles(full_name), checklist_templates(name)").eq("project_id", id).order("submitted_at", { ascending: false }),
     admin.from("time_logs").select("*, profiles(full_name)").eq("project_id", id).order("logged_at", { ascending: false }),
     admin.from("project_assignments").select("*, profiles(full_name, role)").eq("project_id", id),
-    admin.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by, submitter:profiles!submitted_by(full_name)").eq("project_id", id),
+    admin.from("stage_submissions").select("stage, submitted_at, submitted_by, revoked_by").eq("project_id", id),
   ]);
 
   const rawFiles = filesRes.data || [];
@@ -91,8 +91,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const timelogs = timelogsRes.data || [];
   const assignments = assignmentsRes.data || [];
   const submissions = submissionsRes.data || [];
+
+  const submitterIds = [...new Set(submissions.filter((s: any) => s.submitted_by).map((s: any) => s.submitted_by as string))];
+  const { data: submitterProfiles } = submitterIds.length > 0
+    ? await admin.from("profiles").select("id, full_name").in("id", submitterIds)
+    : { data: [] };
+  const submitterMap: Record<string, string> = {};
+  (submitterProfiles || []).forEach((p: any) => { submitterMap[p.id] = p.full_name; });
+
   const submissionsMap: Record<string, any> = {};
-  submissions.forEach((s: any) => { submissionsMap[s.stage] = s; });
+  submissions.forEach((s: any) => { submissionsMap[s.stage] = { ...s, submitterName: submitterMap[s.submitted_by] || null }; });
 
   const isDispatchSubmitted = !!submissionsMap["dispatch"] && !submissionsMap["dispatch"].revoked_by;
   const isFeesSubmitted = !!submissionsMap["fees_received"] && !submissionsMap["fees_received"].revoked_by;
@@ -325,10 +333,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                       </span>
                     ) : (() => {
                       const sub = submissionsMap[stage.value];
-                      const submitterName = sub && !sub.revoked_by ? (sub as any).submitter?.full_name : null;
+                      const submitterName = sub?.submitterName ?? null;
                       return submitterName ? (
                         <span className="text-xs text-slate-500 font-normal flex items-center gap-1">
-                          Submitted by:
+                          {sub.revoked_by ? "Prev. submitted by:" : "Submitted by:"}
                           <Badge variant="outline" className="text-xs font-normal text-[#1e3a5f] border-[#1e3a5f]/30">
                             {submitterName}
                           </Badge>
@@ -457,8 +465,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     PROJECT_STAGES.forEach(({ value: stg }) => {
                       if (!assignedPerStage[stg]) {
                         const sub = submissionsMap[stg];
-                        if (sub && !sub.revoked_by && (sub as any).submitter?.full_name) {
-                          assignedPerStage[stg] = (sub as any).submitter.full_name;
+                        if (sub?.submitterName) {
+                          assignedPerStage[stg] = sub.submitterName;
                         }
                       }
                     });
