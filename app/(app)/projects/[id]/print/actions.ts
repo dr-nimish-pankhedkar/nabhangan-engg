@@ -76,7 +76,8 @@ export async function logTime(input: {
   if (!parsed.success) return { error: "Invalid input" };
   const accessError = await requireActiveUser(supabase, user.id);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("time_logs").insert({
+  const admin = await createAdminClient();
+  const { error } = await admin.from("time_logs").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
     stage: parsed.data.stage,

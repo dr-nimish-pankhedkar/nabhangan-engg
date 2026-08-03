@@ -50,7 +50,8 @@ export async function logTime(input: {
   if (!parsed.success) return { error: "Invalid input" };
   const accessError = await requireSurveyAccess(supabase, user.id, parsed.data.projectId);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("time_logs").insert({
+  const admin = await createAdminClient();
+  const { error } = await admin.from("time_logs").insert({
     project_id: parsed.data.projectId,
     user_id: user.id,
     stage: parsed.data.stage,
@@ -77,7 +78,8 @@ export async function submitChecklist(input: {
   if (!StageSchema.safeParse(input.stage).success) return { error: "Invalid stage" };
   const accessError = await requireSurveyAccess(supabase, user.id, input.projectId);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("checklist_responses").insert({
+  const admin = await createAdminClient();
+  const { error } = await admin.from("checklist_responses").insert({
     project_id: input.projectId,
     template_id: input.templateId,
     user_id: user.id,
@@ -180,7 +182,8 @@ export async function saveSiteVisitReport(input: {
   if (!UUIDSchema.safeParse(input.projectId).success) return { error: "Invalid project ID" };
   const accessError = await requireSurveyAccess(supabase, user.id, input.projectId);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("site_visit_reports").upsert({
+  const admin = await createAdminClient();
+  const { error } = await admin.from("site_visit_reports").upsert({
     project_id: input.projectId,
     user_id: user.id,
     data: input.data,
@@ -221,7 +224,8 @@ export async function updateCaseInfoFromSurvey(
   if (!parsed.success) return { error: "Invalid input" };
   const accessError = await requireSurveyAccess(supabase, user.id, projectId);
   if (accessError) return { error: accessError };
-  const { error } = await supabase.from("projects").update({
+  const admin = await createAdminClient();
+  const { error } = await admin.from("projects").update({
     bank_name: parsed.data.bank_name,
     project_address: parsed.data.project_address,
     bank_metadata: parsed.data.bank_metadata,
